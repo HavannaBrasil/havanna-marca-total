@@ -246,6 +246,59 @@ footer.foot{margin-top:60px;border-top:1px solid var(--line)}
 </head>
 <body>
 
+<!-- ===== TELA DE ACESSO CLIENT-SIDE (GitHub Pages) ===== -->
+<div id="ag-gate">
+  <form id="ag-form" class="ag-card">
+    <div class="ag-logo">
+      <svg width="38" height="46" viewBox="0 0 40 48" aria-label="Havanna"><path d="M4 5 H36 V29 Q36 40 20 46 Q4 40 4 29 Z" fill="#E4002B"/><rect x="13" y="14" width="3.6" height="20" fill="#FFCD00"/><rect x="23.4" y="14" width="3.6" height="20" fill="#FFCD00"/><rect x="13" y="22.2" width="14" height="3.6" fill="#FFCD00"/></svg>
+      <div><div class="ag-nm">HAVANNA</div><div class="ag-sub">Social Listening &middot; Marca Total</div></div>
+    </div>
+    <h1 class="ag-h1">Acesso restrito</h1>
+    <p class="ag-desc">Material estrat&eacute;gico de acesso restrito. Informe suas credenciais para continuar.</p>
+    <div id="ag-err" class="ag-err">Usu&aacute;rio ou senha inv&aacute;lidos. Tente novamente.</div>
+    <label class="ag-label">Usu&aacute;rio</label>
+    <input id="ag-user" class="ag-input" type="text" autocomplete="username" autofocus>
+    <label class="ag-label">Senha</label>
+    <input id="ag-pass" class="ag-input" type="password" autocomplete="current-password">
+    <button class="ag-btn" type="submit">Entrar</button>
+    <div class="ag-foot">Documento confidencial &middot; Um produto Nuts &amp; Co</div>
+  </form>
+</div>
+<style>
+#ag-gate{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;padding:24px;background:radial-gradient(700px 360px at 12% 0%,rgba(228,0,43,.30),transparent 60%),radial-gradient(640px 360px at 90% 8%,rgba(255,205,0,.22),transparent 58%),radial-gradient(700px 420px at 60% 120%,rgba(215,150,60,.20),transparent 60%),#09080F;font-family:'Manrope',system-ui,sans-serif}
+.ag-card{width:100%;max-width:400px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.13);backdrop-filter:blur(18px);border-radius:22px;padding:38px 34px;box-shadow:0 40px 90px -50px rgba(0,0,0,.85);color:#F5F0EA}
+.ag-logo{display:flex;align-items:center;gap:13px;margin-bottom:30px}
+.ag-nm{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;letter-spacing:.18em;font-size:21px}
+.ag-sub{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:#A8A1B2;margin-top:5px}
+.ag-h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700;margin-bottom:6px}
+.ag-desc{font-size:13px;color:#A8A1B2;margin-bottom:24px;line-height:1.5}
+.ag-label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#A8A1B2;font-weight:600;margin:0 0 7px}
+.ag-input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);border-radius:11px;color:#F5F0EA;padding:13px 14px;font-size:14px;font-family:inherit;margin-bottom:16px;color-scheme:dark}
+.ag-input:focus{outline:none;border-color:#FFCD00}
+.ag-btn{width:100%;border:none;border-radius:11px;padding:14px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;color:#fff;cursor:pointer;background:linear-gradient(92deg,#E4002B,#FF7A1A);margin-top:4px}
+.ag-err{display:none;background:rgba(255,92,138,.13);border:1px solid rgba(255,92,138,.35);color:#FF9DB8;font-size:12.5px;border-radius:10px;padding:11px 13px;margin-bottom:18px}
+.ag-foot{margin-top:24px;text-align:center;font-size:11px;color:#7C7689;letter-spacing:.04em}
+html.ag-locked{overflow:hidden}
+@media print{#ag-gate{display:none!important}html.ag-locked{overflow:auto}}
+</style>
+<script>
+(function(){
+  var gate=document.getElementById('ag-gate');
+  try{ if(sessionStorage.getItem('havanna_auth')==='ok'){ gate.parentNode.removeChild(gate); return; } }catch(e){}
+  document.documentElement.classList.add('ag-locked');
+  document.getElementById('ag-form').addEventListener('submit',function(e){
+    e.preventDefault();
+    var u=document.getElementById('ag-user').value.trim(), p=document.getElementById('ag-pass').value;
+    if(u==='havanna' && p==='havanna2026'){
+      try{sessionStorage.setItem('havanna_auth','ok');}catch(e){}
+      document.documentElement.classList.remove('ag-locked');
+      gate.parentNode.removeChild(gate);
+    } else { document.getElementById('ag-err').style.display='block'; }
+  });
+})();
+</script>
+
+
 <!-- SIDE NAV -->
 <nav class="nav-side" aria-label="Navegação das seções">
   <a href="#abertura" data-nav="abertura"><span class="bar"></span>00 Abertura</a>
