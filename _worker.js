@@ -84,8 +84,8 @@ button:hover{transform:translateY(-1px);box-shadow:0 12px 30px -10px rgba(228,0,
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const USER = env.USERNAME || "havanna";
-    const PASS = env.PASSWORD || "havanna2026";
+    const USER = env.USERNAME || "nuts.havanna";
+    const PASS = env.PASSWORD || "MarcaTotal2026";
     const SECRET = env.SESSION_SECRET || "havanna_nuts_marca_total_2026_chave_secreta_brasil";
 
     // Login

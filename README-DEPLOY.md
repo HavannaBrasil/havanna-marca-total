@@ -24,7 +24,7 @@ Dashboard interativo de social listening da Havanna Brasil, marca total, último
 
 O `_worker.js` lê as credenciais de variáveis de ambiente. Enquanto elas não forem definidas, ele usa um padrão de fallback para que o site funcione logo após o deploy.
 
-**Padrão de fallback:** usuário `havanna`, senha `havanna2026`.
+**Padrão de fallback:** usuário `nuts.havanna`, senha `MarcaTotal2026`.
 
 Para definir as suas, vá em **Settings**, depois **Variables and secrets**, e cadastre:
 
