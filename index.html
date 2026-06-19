@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Havanna · Social Listening · Marca Total</title>
+<meta name="description" content="Dashboard interativo de social listening da Havanna Brasil. Marca total, últimos 12 meses, com a fonte de cada dado a um clique.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+:root{
+  --bg:#09080F;
+  --ink:#F5F0EA; --dim:#A8A1B2; --faint:#7C7689;
+  --red:#FF3B46; --brand-red:#E4002B; --yellow:#FFCD00; --gold:#D7BE7E; --green:#5FE0A0;
+  --pink:#FF5C8A; --blue:#5AA8FF; --purple:#B98CF0;
+  --glass:rgba(255,255,255,.055); --glass-bd:rgba(255,255,255,.12);
+  --panel:#15121C; --panel-2:#1B1726; --line:rgba(255,255,255,.08);
+  --radius:20px;
+  --ff:'Manrope',system-ui,sans-serif; --fd:'Plus Jakarta Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--ff); color:var(--ink); line-height:1.6; -webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(720px 360px at 8% -2%, rgba(228,0,43,.26), transparent 60%),
+    radial-gradient(680px 360px at 94% 4%, rgba(255,205,0,.18), transparent 58%),
+    radial-gradient(900px 520px at 60% 120%, rgba(215,150,60,.16), transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+}
+a{color:inherit;text-decoration:none}
+.shell{max-width:1180px;margin:0 auto;padding:0 22px}
+.eyebrow{font-family:var(--fd);font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:700;color:var(--gold)}
+
+/* ---------- LOGO ---------- */
+.logo{display:flex;align-items:center;gap:13px}
+.logo .shield{width:38px;height:46px;flex:none}
+.logo .mark{display:flex;flex-direction:column;line-height:1}
+.logo .mark .nm{font-family:var(--fd);font-weight:800;letter-spacing:.18em;font-size:20px;color:var(--ink)}
+.logo .mark .sub{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-top:6px}
+
+/* ---------- HEADER ---------- */
+header.top{
+  position:sticky;top:0;z-index:50;backdrop-filter:blur(16px);
+  background:rgba(9,8,15,.72);border-bottom:1px solid var(--line);
+}
+.top-in{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;flex-wrap:wrap}
+.top-right{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.status{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 1.9s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(95,224,160,.55)}70%{box-shadow:0 0 0 9px rgba(95,224,160,0)}100%{box-shadow:0 0 0 0 rgba(95,224,160,0)}}
+.ctx-pills{display:flex;gap:8px;flex-wrap:wrap}
+.ctx{font-size:11px;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:rgba(255,255,255,.03)}
+.ctx b{color:var(--ink);font-weight:600}
+
+/* ---------- CONTROL BAR ---------- */
+.controls{position:sticky;top:73px;z-index:40;background:rgba(9,8,15,.66);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:12px 0}
+.controls-in{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.preset-btn{font-family:var(--ff);font-size:12.5px;font-weight:600;color:var(--dim);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:999px;padding:8px 15px;cursor:pointer;transition:.18s}
+.preset-btn:hover{color:var(--ink);border-color:rgba(255,255,255,.22)}
+.preset-btn.active{color:#fff;background:linear-gradient(92deg,var(--brand-red),#FF7A1A);border-color:transparent;box-shadow:0 6px 22px -8px rgba(228,0,43,.7)}
+.date-wrap{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim)}
+.date-wrap input{font-family:var(--ff);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:7px 10px;font-size:12px;color-scheme:dark}
+.actions{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap}
+.btn{font-family:var(--ff);display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.05);border:1px solid var(--glass-bd);border-radius:10px;padding:8px 14px;cursor:pointer;transition:.18s}
+.btn:hover{background:rgba(255,255,255,.1);transform:translateY(-1px)}
+.btn svg{width:15px;height:15px}
+
+/* ---------- LIVE BLOCK ---------- */
+.live{margin:22px 0 0;border:1px solid var(--glass-bd);background:var(--glass);backdrop-filter:blur(12px);border-radius:var(--radius);padding:18px 22px;display:flex;gap:16px;align-items:flex-start}
+.live .ic{width:34px;height:34px;flex:none;border-radius:10px;display:grid;place-items:center;background:rgba(255,205,0,.14);color:var(--yellow)}
+.live p{font-size:13.5px;color:var(--dim)}
+.live b{color:var(--ink)}
+
+/* ---------- HERO ---------- */
+.hero{padding:64px 0 30px}
+.hero .live-pill{display:inline-flex;align-items:center;gap:9px;font-family:var(--fd);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--ink);border:1px solid var(--glass-bd);background:var(--glass);border-radius:999px;padding:8px 15px;margin-bottom:24px}
+.hero h1{font-family:var(--fd);font-weight:800;font-size:clamp(34px,6vw,64px);line-height:1.04;letter-spacing:-.02em;max-width:17ch}
+.hero h1 .grad{background:linear-gradient(92deg,#FF4D58,#FF9F43 52%,#FFD23D);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{margin-top:20px;font-size:17px;color:var(--dim);max-width:62ch}
+
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:40px}
+.kpi{position:relative;border-radius:18px;padding:22px 20px 20px;background:var(--glass);border:1px solid var(--glass-bd);backdrop-filter:blur(16px);overflow:hidden;transition:.2s}
+.kpi:hover{transform:translateY(-3px)}
+.kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:4px}
+.kpi.k1::before{background:var(--yellow)} .kpi.k2::before{background:var(--green)} .kpi.k3::before{background:var(--pink)} .kpi.k4::before{background:var(--blue)} .kpi.k5::before{background:var(--purple)}
+.kpi .ic{width:24px;height:24px;margin-bottom:14px}
+.kpi .lab{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:10px}
+.kpi .big{font-family:var(--fd);font-weight:800;font-size:30px;letter-spacing:-.02em;color:#fff;line-height:1}
+.kpi .ds{font-size:11.5px;color:var(--dim);margin-top:9px;min-height:30px}
+.kpi .tg{display:inline-block;margin-top:6px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:4px 9px;border-radius:999px}
+.kpi.k1 .tg{background:rgba(255,205,0,.14);color:var(--yellow)} .kpi.k2 .tg{background:rgba(95,224,160,.14);color:var(--green)} .kpi.k3 .tg{background:rgba(255,92,138,.14);color:var(--pink)} .kpi.k4 .tg{background:rgba(90,168,255,.14);color:var(--blue)} .kpi.k5 .tg{background:rgba(185,140,240,.14);color:var(--purple)}
+
+/* ---------- CHARTS ---------- */
+.charts{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;margin-top:22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.card h3{font-family:var(--fd);font-size:14px;font-weight:700;letter-spacing:.02em;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+.card .csub{font-size:11.5px;color:var(--faint);margin-bottom:16px}
+.card .ttl-ic{width:18px;height:18px;color:var(--gold)}
+.chart-box{position:relative;height:260px}
+.chart-box.sm{height:230px}
+
+/* ---------- SECTIONS ---------- */
+section.chapter{padding:62px 0 8px;scroll-margin-top:150px}
+.sec-k{font-family:var(--fd);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--gold);margin-bottom:16px}
+.sec-h{font-family:var(--fd);font-weight:800;font-size:clamp(26px,3.4vw,38px);line-height:1.12;letter-spacing:-.01em;max-width:24ch}
+.sec-h .grad{background:linear-gradient(92deg,#FF4D58,#FFB03D);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sec-lead{margin-top:18px;font-size:16px;color:var(--dim);max-width:70ch}
+.sec-lead.tight{max-width:64ch}
+
+.tri{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:30px}
+.tri .card .tag{margin-bottom:12px}
+.tri .card h4{font-family:var(--fd);font-size:16px;font-weight:700;margin-bottom:8px}
+.tri .card p{font-size:13.5px;color:var(--dim)}
+
+.tag{display:inline-block;font-size:10px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;padding:4px 10px;border-radius:999px}
+.tag.int{background:rgba(95,224,160,.13);color:var(--green)}
+.tag.ext{background:rgba(255,205,0,.13);color:var(--yellow)}
+.tag.cru{background:rgba(185,140,240,.14);color:var(--purple)}
+
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:28px}
+.dcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;transition:.18s}
+.dcard:hover{border-color:rgba(255,255,255,.18);transform:translateY(-2px)}
+.dcard .ic{width:26px;height:26px;margin-bottom:14px;color:var(--gold)}
+.dcard .lab{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:700;margin:11px 0 7px}
+.dcard .big{font-family:var(--fd);font-weight:800;font-size:25px;color:#fff;letter-spacing:-.01em}
+.dcard p{font-size:13px;color:var(--dim);margin-top:7px}
+
+.quote{border-left:2px solid var(--gold);padding:6px 0 6px 20px;margin:26px 0;max-width:74ch}
+.quote p{font-style:italic;font-size:16px;color:var(--ink)}
+.quote cite{display:block;margin-top:9px;font-style:normal;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);font-weight:700}
+
+.attention{margin-top:28px;border:1px solid rgba(255,92,138,.3);background:rgba(255,92,138,.06);border-radius:16px;padding:20px 22px}
+.attention .lab{font-family:var(--fd);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--pink);font-weight:700;margin-bottom:8px}
+.attention p{font-size:14.5px;color:var(--ink)}
+
+/* ---------- SECTION 03 LIST ---------- */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:28px}
+.tab{font-family:var(--ff);font-size:12.5px;font-weight:600;color:var(--dim);background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:999px;padding:9px 16px;cursor:pointer;transition:.18s;display:flex;align-items:center;gap:8px}
+.tab:hover{color:var(--ink)}
+.tab.active{color:#fff;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25)}
+.tab .cnt{font-size:11px;background:rgba(255,255,255,.1);border-radius:999px;padding:1px 8px;color:var(--ink)}
+.tab-content{display:none;margin-top:20px}
+.tab-content.active{display:block}
+.post-item{display:grid;grid-template-columns:42px 1fr auto;gap:14px;align-items:center;padding:15px 16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);margin-bottom:10px;transition:.16s}
+.post-item:hover{transform:translateX(4px);border-color:rgba(255,255,255,.2);background:var(--panel-2)}
+.post-icon{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;font-family:var(--fd);font-weight:800;font-size:13px;color:#fff}
+.icon-ig{background:linear-gradient(135deg,#833AB4,#E1306C,#F77737)} .icon-tt{background:#111} .icon-fb{background:#1877f2} .icon-news{background:rgba(255,205,0,.18);color:var(--yellow)} .icon-ra{background:rgba(255,92,138,.18);color:var(--pink)}
+.post-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.post-meta{font-size:11.5px;color:var(--faint)}
+.post-num{font-family:var(--fd);font-weight:800;font-size:17px;color:#fff}
+.external-arrow{color:var(--gold);font-weight:700}
+.legend-chip{font-size:9px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:999px}
+.chip-internal{background:rgba(95,224,160,.14);color:var(--green)} .chip-external{background:rgba(255,205,0,.14);color:var(--yellow)}
+.empty-state{padding:40px;text-align:center;color:var(--faint);border:1px dashed var(--line);border-radius:14px}
+
+/* ---------- SENTIMENT ---------- */
+.senti-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:30px}
+.scard{border-radius:16px;padding:22px;border:1px solid var(--line);background:var(--panel)}
+.scard.pos{border-color:rgba(95,224,160,.3)} .scard.neu{border-color:rgba(255,205,0,.3)} .scard.neg{border-color:rgba(255,92,138,.3)} .scard.risk{border-color:rgba(255,159,67,.3)}
+.scard h4{font-family:var(--fd);font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:9px}
+.sdot{width:11px;height:11px;border-radius:50%}
+.scard ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.scard li{font-size:13.5px;color:var(--dim);padding-left:16px;position:relative}
+.scard li::before{content:"";position:absolute;left:0;top:9px;width:5px;height:5px;border-radius:50%;background:var(--faint)}
+.dist{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+.dist-bar{display:flex;height:16px;border-radius:999px;overflow:hidden;margin:14px 0 16px}
+.dist-bar span{display:block}
+.dist-leg{display:flex;gap:24px;flex-wrap:wrap;font-size:13px;color:var(--dim)}
+.dist-leg b{font-family:var(--fd);color:var(--ink)}
+
+/* ---------- RECS ---------- */
+.recs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:30px}
+.rec{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;transition:.18s}
+.rec:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.18)}
+.rec .ic{width:26px;height:26px;color:var(--gold);margin-bottom:14px}
+.rec h4{font-family:var(--fd);font-size:15.5px;font-weight:700;margin:10px 0 9px}
+.rec p{font-size:13px;color:var(--dim)}
+
+/* ---------- METHOD + SOURCES ---------- */
+.method{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:30px}
+.method .card h4{font-family:var(--fd);font-size:15px;font-weight:700;margin-bottom:12px}
+.method ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+.method li{font-size:13.5px;color:var(--dim);padding-left:16px;position:relative}
+.method li::before{content:"";position:absolute;left:0;top:9px;width:5px;height:5px;border-radius:50%;background:var(--gold)}
+.sourcesGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:20px}
+.source-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;font-size:13px;transition:.16s}
+.source-card:hover{transform:translateX(4px);border-color:rgba(255,255,255,.18)}
+.source-card a{color:var(--ink);font-weight:600}
+.source-card a:hover{color:var(--yellow)}
+.source-meta{font-size:11px;color:var(--faint);margin-top:7px}
+
+/* ---------- WORKFLOW ---------- */
+.workflow{margin-top:34px;background:var(--glass);border:1px solid var(--glass-bd);backdrop-filter:blur(12px);border-radius:var(--radius);padding:30px}
+.workflow h3{font-family:var(--fd);font-size:18px;font-weight:800;margin-bottom:6px}
+.workflow .wsub{font-size:13.5px;color:var(--dim);margin-bottom:24px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.step{display:flex;gap:13px;align-items:flex-start}
+.step .n{font-family:var(--fd);font-weight:800;font-size:14px;width:30px;height:30px;flex:none;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,var(--brand-red),#FF7A1A);color:#fff}
+.step h5{font-size:13.5px;font-weight:700;margin-bottom:4px}
+.step p{font-size:12.5px;color:var(--dim)}
+
+/* ---------- FOOTER ---------- */
+footer.foot{margin-top:60px;border-top:1px solid var(--line)}
+.confid{background:linear-gradient(180deg,rgba(228,0,43,.1),rgba(228,0,43,.04));border:1px solid rgba(228,0,43,.3);border-radius:var(--radius);padding:26px;margin:34px 0 24px;display:flex;gap:16px;align-items:flex-start}
+.confid .ic{width:34px;height:34px;flex:none;border-radius:9px;display:grid;place-items:center;background:rgba(228,0,43,.18);color:var(--red)}
+.confid .ctitle{font-family:var(--fd);font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;color:var(--red);margin-bottom:8px}
+.confid p{font-size:13.5px;color:var(--dim)}
+.foot-sign{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:8px 0 50px;flex-wrap:wrap}
+.foot-sign .nuts{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--dim)}
+.foot-sign .nuts b{font-family:var(--fd);color:var(--ink);font-weight:800;letter-spacing:.02em}
+.foot-line{font-size:11.5px;color:var(--faint);max-width:60ch;text-align:right}
+
+/* ---------- SIDE NAV ---------- */
+.nav-side{position:fixed;left:calc((100vw - 1180px)/2 - 26px);top:50%;transform:translate(-100%,-50%);z-index:30;display:flex;flex-direction:column;gap:14px;align-items:flex-end;text-align:right}
+.nav-side a{display:flex;align-items:center;justify-content:flex-end;gap:10px;font-size:11px;color:var(--faint);transition:.18s;white-space:nowrap}
+.nav-side a .bar{width:18px;height:2px;background:var(--faint);border-radius:2px;transition:.18s}
+.nav-side a:hover,.nav-side a.current{color:var(--ink)}
+.nav-side a.current .bar{width:30px;background:var(--brand-red)}
+@media(max-width:1500px){.nav-side{display:none}}
+
+/* ---------- RESPONSIVE ---------- */
+@media(max-width:980px){.kpis{grid-template-columns:repeat(2,1fr)}.charts{grid-template-columns:1fr}.recs{grid-template-columns:1fr}.method,.senti-grid,.steps{grid-template-columns:1fr}}
+@media(max-width:760px){.tri{grid-template-columns:1fr}.hero{padding:44px 0 22px}.foot-line{text-align:left}.kpis{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr}}
+@media(max-width:520px){.kpis{grid-template-columns:1fr}}
+
+/* ---------- PRINT ---------- */
+@media print{
+  body{background:#fff !important;color:#111 !important}
+  header.top,.controls,.nav-side,.live,.workflow,.actions{display:none !important}
+  .kpi,.card,.dcard,.rec,.scard,.dist,.post-item,.source-card,.tab-content{background:#fff !important;border:1px solid #ddd !important;backdrop-filter:none !important;box-shadow:none !important}
+  .kpi .big,.dcard .big,.post-num,.hero h1,.sec-h,.card h3{color:#111 !important}
+  .hero h1 .grad,.sec-h .grad{-webkit-text-fill-color:#C1102E;color:#C1102E}
+  .dim,.sec-lead,.hero p.lead,.kpi .ds,p{color:#333 !important}
+  section.chapter{page-break-inside:avoid;padding:24px 0}
+  .tab-content{display:block !important}
+  .confid{background:#fff !important;border:1px solid #E4002B !important}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDE NAV -->
+<nav class="nav-side" aria-label="Navegação das seções">
+  <a href="#abertura" data-nav="abertura"><span class="bar"></span>00 Abertura</a>
+  <a href="#externo" data-nav="externo"><span class="bar"></span>01 Cenário externo</a>
+  <a href="#interno" data-nav="interno"><span class="bar"></span>02 Cenário interno</a>
+  <a href="#detalhe" data-nav="detalhe"><span class="bar"></span>03 Por fonte</a>
+  <a href="#sentimento" data-nav="sentimento"><span class="bar"></span>04 Sentimento</a>
+  <a href="#recomendações" data-nav="recomendações"><span class="bar"></span>05 Recomendações</a>
+  <a href="#metodologia" data-nav="metodologia"><span class="bar"></span>06 Metodologia</a>
+</nav>
+
+<!-- HEADER -->
+<header class="top" id="topo">
+  <div class="shell top-in">
+    <div class="logo">
+      <svg class="shield" viewBox="0 0 40 48" aria-label="Havanna"><path d="M4 5 H36 V29 Q36 40 20 46 Q4 40 4 29 Z" fill="#E4002B"/><rect x="13" y="14" width="3.6" height="20" fill="#FFCD00"/><rect x="23.4" y="14" width="3.6" height="20" fill="#FFCD00"/><rect x="13" y="22.2" width="14" height="3.6" fill="#FFCD00"/></svg>
+      <div class="mark"><span class="nm">HAVANNA</span><span class="sub">Social Listening · Marca Total</span></div>
+    </div>
+    <div class="top-right">
+      <div class="status"><span class="dot"></span>Atualizado em <span id="updatedDate">19/06/2026</span></div>
+      <div class="ctx-pills">
+        <span class="ctx">Período <b>12 meses</b></span>
+        <span class="ctx">Escopo <b>Marca total</b></span>
+        <span class="ctx">Fontes <b>Interno + Externo</b></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- CONTROL BAR -->
+<div class="controls">
+  <div class="shell controls-in">
+    <div class="presets">
+      <button class="preset-btn" data-preset="today">Hoje</button>
+      <button class="preset-btn" data-preset="yesterday">Ontem</button>
+      <button class="preset-btn" data-preset="7d">7 dias</button>
+      <button class="preset-btn" data-preset="30d">30 dias</button>
+      <button class="preset-btn" data-preset="90d">90 dias</button>
+      <button class="preset-btn active" data-preset="12m">12 meses</button>
+      <button class="preset-btn" data-preset="custom">Custom</button>
+    </div>
+    <div class="date-wrap"><input type="date" id="startDate"> <span>até</span> <input type="date" id="endDate"></div>
+    <div class="actions">
+      <button class="btn" onclick="document.getElementById('csvInput').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>Importar CSV</button>
+      <input type="file" id="csvInput" accept=".csv" style="display:none" onchange="importCSV(event)">
+      <button class="btn" onclick="exportToCSV()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9m0 0l-4 4m4-4l4 4M4 7V5a2 2 0 012-2h12a2 2 0 012 2v2"/></svg>Exportar CSV</button>
+      <button class="btn" onclick="window.print()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-3a2 2 0 012-2h16a2 2 0 012 2v3a2 2 0 01-2 2h-2M6 14h12v7H6z"/></svg>Imprimir</button>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- LIVE BLOCK -->
+  <div class="live">
+    <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+    <p><b>Como manter este painel vivo.</b> A coleta não roda dentro do dashboard por uma razão de robustez, ou seja, scraping e APIs quebram com frequência e travariam a página. O fluxo recomendado e externo. Use o <b>Apify</b> para extrair posts públicos, o <b>Brand24</b> para menções de marca e o <b>Google Alerts</b> para imprensa, exporte um CSV no formato padrão e use o botão Importar CSV acima. O dashboard recalcula KPIs, gráficos e listas na hora.</p>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <span class="live-pill"><span class="dot"></span>Dashboard ao vivo</span>
+    <h1>O que o Brasil diz sobre a <span class="grad">Havanna inteira</span>.</h1>
+    <p class="lead">Um retrato da conversa publica sobre a marca nos últimos doze meses, do alfajor ao helado, da cafeteria ao Reclame Aqui, cruzado com os sinais das contas oficiais. Cada número filtra por período e cada fonte abre o material original a um clique.</p>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi k1"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#FFCD00" stroke-width="1.7"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><div class="lab">Alcance + Views</div><div class="big" id="kpi-alcance">—</div><div class="ds">Soma de alcance e visualizações nas contas</div><span class="tg">Interno</span></div>
+    <div class="kpi k2"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#5FE0A0" stroke-width="1.7"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.5-9 9-9 9Z"/></svg><div class="lab">Engajamento</div><div class="big" id="kpi-eng">—</div><div class="ds">Curtidas, comentários e compartilhamentos</div><span class="tg">Interno</span></div>
+    <div class="kpi k3"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#FF5C8A" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M3 9h18M9 21V9"/></svg><div class="lab">Posts no período</div><div class="big" id="kpi-posts">—</div><div class="ds">Publicações nas contas oficiais Havanna</div><span class="tg">Interno</span></div>
+    <div class="kpi k4"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#5AA8FF" stroke-width="1.7"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><div class="lab">Top viral</div><div class="big" id="kpi-top">—</div><div class="ds" id="kpi-top-desc">—</div><span class="tg">Interno</span></div>
+    <div class="kpi k5"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#B98CF0" stroke-width="1.7"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg><div class="lab">Menções externas</div><div class="big" id="kpi-ext">—</div><div class="ds">Imprensa, Reclame Aqui e UGC mapeados</div><span class="tg">Externo</span></div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts">
+    <div class="card"><h3><svg class="ttl-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 7-7M14 8h5v5"/></svg>Alcance mensal · marca total</h3><div class="csub" id="chartPeriod">—</div><div class="chart-box"><canvas id="reachChart"></canvas></div></div>
+    <div class="card"><h3><svg class="ttl-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 4"/></svg>Distribuição por rede</h3><div class="csub">Mix de alcance por plataforma</div><div class="chart-box"><canvas id="platformChart"></canvas></div></div>
+  </div>
+  <div class="charts" style="margin-top:18px">
+    <div class="card"><h3><svg class="ttl-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>Sentimento · interno + externo</h3><div class="csub">Cruzamento de todas as menções do período</div><div class="chart-box sm"><canvas id="sentimentChart"></canvas></div></div>
+    <div class="card"><h3><svg class="ttl-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/></svg>Top fontes externas</h3><div class="csub">Veículos por número de menções mapeadas</div><div class="chart-box sm"><canvas id="mentionsChart"></canvas></div></div>
+  </div>
+
+  <!-- SECTION 00 -->
+  <section class="chapter" id="abertura">
+    <div class="sec-k">00 · Abertura</div>
+    <h2 class="sec-h">Não são so números. É o que as pessoas dizem sobre a <span class="grad">Havanna</span>.</h2>
+    <p class="sec-lead">Este relatório responde a uma pergunta simples que toda diretoria faz mais cedo ou mais tarde, ou seja, para além das vendas, o que o público realmente sente pela marca. O recorte e a Havanna como marca total, não uma linha isolada. De um lado está o que a própria marca publicou e ativou nas contas oficiais. De outro, está o que circulou publicamente, na imprensa de negócios, nos dados de categoria, no Reclame Aqui e na conversa espontânea do consumidor. Tudo aqui e etiquetado por fonte, e cada citação abre o material original em uma nova aba.</p>
+    <p class="sec-lead" style="margin-top:14px">O recorte é direto. Período de doze meses até junho de 2026. Contas analisadas no Instagram, TikTok e Facebook oficiais. Recorte de conteúdo de marca total, do alfajor ao helado, da cafeteria às inaugurações. Canais de imprensa, social, mercado e Reclame Aqui.</p>
+    <div class="tri">
+      <div class="card"><span class="tag int">Interno</span><h4>O que sai das contas</h4><p>Os sinais das contas oficiais da Havanna, ou seja, alcance, engajamento, posts e os conteúdos que mais performaram no período.</p></div>
+      <div class="card"><span class="tag ext">Externo</span><h4>O que circula na internet</h4><p>Tudo o que é público, isto é, imprensa de negócios, dados de mercado, presença no Reclame Aqui e a conversa espontânea do consumidor.</p></div>
+      <div class="card"><span class="tag cru">Cruzado</span><h4>Quando as duas se encontram</h4><p>A leitura mais valiosa nasce quando o que a marca publica encontra o que o público diz. É nesse cruzamento que aparecem as oportunidades reais.</p></div>
+    </div>
+  </section>
+
+  <!-- SECTION 01 -->
+  <section class="chapter" id="externo">
+    <div class="sec-k">01 · Cenário externo</div>
+    <h2 class="sec-h">A imprensa adotou a expansão. O consumidor ainda cobra consistência.</h2>
+    <p class="sec-lead">A cobertura editorial dos últimos doze meses tratou a Havanna como caso de expansão acelerada. Veículos como Exame, Portal IN, Folha Vitória, Promoview e dezenas de portais regionais acompanharam a chegada da Heladeria e a abertura de novas unidades pelo pais, do Sul ao Nordeste. Em paralelo, a linha Pistache Dubai virou fenômeno de TikTok no Brasil e na Argentina, e o dulce de leche apareceu até no tapete vermelho do Met Gala. A leitura positiva da mídia, porem, não bate inteiramente com a do consumidor que entrou no Reclame Aqui para reclamar de entrega e atendimento.</p>
+    <div class="cards-grid">
+      <div class="dcard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="tag ext">Externo</span><div class="lab">Cobertura editorial</div><div class="big">24+</div><p>materias e menções de imprensa mapeadas no período, da expansão da Heladeria ao alfajor de pistache viral.</p></div>
+      <div class="dcard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg><span class="tag ext">Externo</span><div class="lab">Expansão mapeada</div><div class="big">14+</div><p>inaugurações de Heladeria noticiadas, de Porto Alegre e São Paulo a Recife, Rio, Teresina e Passo Fundo.</p></div>
+      <div class="dcard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2v20M5 5l14 14"/><circle cx="12" cy="12" r="9"/></svg><span class="tag ext">Externo</span><div class="lab">Ambição anunciada</div><div class="big">R$ 550 mi</div><p>meta de faturamento da operação de franquias de sorvete no Brasil, segundo anúncio noticiado pela Exame.</p></div>
+      <div class="dcard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 12l2 2 4-4M12 3l7 4v5c0 5-3 7-7 9-4-2-7-4-7-9V7l7-4z"/></svg><span class="tag ext">Externo</span><div class="lab">Reclame Aqui · físicas</div><div class="big">4,35/5</div><p>reputação nas lojas físicas, com 51,3 por cento de respostas e 38,3 por cento que voltariam a fazer negócio.</p></div>
+      <div class="dcard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg><span class="tag ext">Externo</span><div class="lab">Reclame Aqui · loja virtual</div><div class="big">6,9%</div><p>taxa de resposta na loja virtual, com status Não recomendado. É o ponto de atrito mais visível da marca.</p></div>
+      <div class="dcard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg><span class="tag cru">Cruzado</span><div class="lab">Trend Pistache Dubai</div><div class="big">3,1 mi</div><p>views somadas nos três vídeos da linha Pistache Dubai no TikTok, eco da mesma trend que viralizou na Argentina.</p></div>
+    </div>
+    <div class="quote"><p>"Do alfajor ao sorvete, a Havanna anuncia franquia de sorvete para alcançar R$ 550 milhões no Brasil."</p><cite>Exame · Anúncio da operação Heladeria</cite></div>
+    <div class="quote"><p>"Furor por el alfajor de pistacho Havanna, la joya más viral del momento."</p><cite>Los Andes (AR) · Trend Pistache</cite></div>
+    <div class="attention"><div class="lab">Ponto que pede atenção</div><p>A percepção publica na imprensa, calorosa e voltada à expansão, nem sempre encontra a do consumidor que entrou no Reclame Aqui para reclamar de entrega e atendimento. O intervalo entre o brilho editorial da marca e o atrito na experiência da loja virtual e exatamente onde uma escuta contínua entrega o maior valor.</p></div>
+  </section>
+
+  <!-- SECTION 02 -->
+  <section class="chapter" id="interno">
+    <div class="sec-k">02 · Cenário interno</div>
+    <h2 class="sec-h">A marca passou o ano provando o quanto a Havanna é desejada.</h2>
+    <p class="sec-lead">Olhando o que saiu das contas oficiais, com atualização recente até junho de 2026, a leitura é clara. A Havanna alternou nostalgia e novidade, do dulce de leche clássico ao lancamento da linha Pistache Dubai, das datas comemorativas ao primeiro ano da Heladeria. O TikTok foi o motor de alcance, o Instagram concentrou o engajamento qualificado e o Facebook sustentou uma base fiel. Abaixo, os três conteúdos que melhor traduzem o período.</p>
+    <div class="cards-grid">
+      <div class="dcard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="tag int">Interno</span><div class="lab">Pico TikTok</div><div class="big">1,41 mi</div><p>views no vídeo da linha Pistache Dubai, o maior alcance orgânico de um único conteúdo no período.</p></div>
+      <div class="dcard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2"/></svg><span class="tag int">Interno</span><div class="lab">Top Instagram</div><div class="big">59 mil</div><p>de alcance no post da linha YoPro, zero açúcar e zero lactose, com forte volume de compartilhamentos.</p></div>
+      <div class="dcard"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 21s-7-4.5-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.5-9 9-9 9Z"/></svg><span class="tag cru">Cruzado</span><div class="lab">Moment marketing</div><div class="big">Met Gala</div><p>o dulce de leche entrou na conversa do tapete vermelho, exemplo de marca que pega carona em pauta cultural.</p></div>
+    </div>
+    <p class="sec-lead tight" style="margin-top:24px">A leitura interna confirma a externa. O que move audiência hoje é a combinação de novidade com trend, como a linha Pistache Dubai, ancorada na memória afetiva do dulce de leche. O desafio é transformar pico de alcance em recorrência, levando o mesmo cuidado de conteúdo para o dia a dia da cafeteria e da Heladeria.</p>
+  </section>
+
+  <!-- SECTION 03 -->
+  <section class="chapter" id="detalhe">
+    <div class="sec-k">03 · Detalhamento por fonte</div>
+    <h2 class="sec-h">Cada menção, com link direto.</h2>
+    <p class="sec-lead tight">Tudo abaixo é clicável e abre o material original em uma nova aba. Use as abas de plataforma para recortar a lista. Os contadores acompanham o filtro de período no topo.</p>
+    <div class="tabs">
+      <button class="tab active" data-tab="instagram">Instagram <span class="cnt" id="count-instagram">0</span></button>
+      <button class="tab" data-tab="tiktok">TikTok <span class="cnt" id="count-tiktok">0</span></button>
+      <button class="tab" data-tab="facebook">Facebook <span class="cnt" id="count-facebook">0</span></button>
+      <button class="tab" data-tab="imprensa">Imprensa <span class="cnt" id="count-imprensa">0</span></button>
+      <button class="tab" data-tab="reclame">Reclame Aqui <span class="cnt" id="count-reclame">0</span></button>
+      <button class="tab" data-tab="ugc">UGC <span class="cnt" id="count-ugc">0</span></button>
+    </div>
+    <div class="tab-content active" id="tab-instagram"><div id="list-instagram"></div></div>
+    <div class="tab-content" id="tab-tiktok"><div id="list-tiktok"></div></div>
+    <div class="tab-content" id="tab-facebook"><div id="list-facebook"></div></div>
+    <div class="tab-content" id="tab-imprensa"><div id="list-imprensa"></div></div>
+    <div class="tab-content" id="tab-reclame"><div id="list-reclame"></div></div>
+    <div class="tab-content" id="tab-ugc"><div id="list-ugc"></div></div>
+  </section>
+
+  <!-- SECTION 04 -->
+  <section class="chapter" id="sentimento">
+    <div class="sec-k">04 · Leitura de sentimento</div>
+    <h2 class="sec-h">Onde a conversa é positiva, neutra ou crítica.</h2>
+    <p class="sec-lead tight">A leitura abaixo e uma estimativa qualitativa a partir das fontes públicas e dos conteúdos do período. Não é uma classificação estatística, é o ponto de partida para uma categorização contínua.</p>
+    <div class="senti-grid">
+      <div class="scard pos"><h4><span class="sdot" style="background:var(--green)"></span>Sentimento positivo dominante</h4><ul><li>Entusiasmo com a linha Pistache Dubai e a trend do chocolate de Dubai.</li><li>Nostalgia do dulce de leche e dos clássicos da marca.</li><li>Recepção calorosa a cada nova inauguração de Heladeria pelo pais.</li></ul></div>
+      <div class="scard neu"><h4><span class="sdot" style="background:var(--yellow)"></span>Sentimento neutro e curiosidade</h4><ul><li>Cobertura corporativa da expansão e das metas de franquia.</li><li>Conteúdo informativo sobre o que é o chocolate de Dubai.</li><li>Comparativos de mercado da categoria de sorvete premium.</li></ul></div>
+      <div class="scard neg"><h4><span class="sdot" style="background:var(--pink)"></span>Sentimento crítico identificado</h4><ul><li>Loja virtual com status Não recomendado no Reclame Aqui.</li><li>Queixas de entrega, produto derretido e prazo de resposta.</li><li>Itens fora de estoque e atendimento na cafeteria.</li></ul></div>
+      <div class="scard risk"><h4><span class="sdot" style="background:#FF9F43"></span>Risco competitivo a monitorar</h4><ul><li>Premiumização acelerada de Bacio di Latte e Haagen-Dazs.</li><li>Disputa por ocasião de consumo fora do verão.</li><li>Dependência de trend, que tem janela curta de atenção.</li></ul></div>
+    </div>
+    <div class="dist">
+      <div class="eyebrow">Distribuição estimada</div>
+      <div class="dist-bar"><span style="width:62%;background:var(--green)"></span><span style="width:26%;background:var(--yellow)"></span><span style="width:12%;background:var(--pink)"></span></div>
+      <div class="dist-leg"><span><b>62%</b> positivo, das contas e da conversa de produto</span><span><b>26%</b> neutro, da cobertura corporativa e de mercado</span><span><b>12%</b> crítico, concentrado no Reclame Aqui</span></div>
+    </div>
+  </section>
+
+  <!-- SECTION 05 -->
+  <section class="chapter" id="recomendações">
+    <div class="sec-k">05 · Recomendações</div>
+    <h2 class="sec-h">Para os próximos 90 dias.</h2>
+    <p class="sec-lead tight">Observações estratégicas extraídas da escuta. Não são promessas, são o que a leitura honesta dos sinais sugere para a marca.</p>
+    <div class="recs">
+      <div class="rec"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="tag cru">Cruzado</span><h4>Capitalizar a trend do Pistache</h4><p>A janela de atenção da trend é curta. Concentrar conteúdo e mídia enquanto o Pistache Dubai está quente, com captura de UGC, multiplica o alcance orgânico já provado.</p></div>
+      <div class="rec"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="tag ext">Externo</span><h4>Plano SAC para o Reclame Aqui</h4><p>A loja virtual com status Não recomendado e o risco reputacional mais visível. Responder publicamente cada caso protege a reputação construída em décadas.</p></div>
+      <div class="rec"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg><span class="tag ext">Externo</span><h4>Capitalizar a cobertura editorial</h4><p>A imprensa já trata a expansão como notícia. Transformar cada inauguração em kit de imprensa e conteúdo local amplifica o que já vem de graça.</p></div>
+      <div class="rec"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span class="tag int">Interno</span><h4>Transformar pico em recorrência</h4><p>O alcance vem de novidade e trend. Levar o mesmo cuidado de conteúdo para o dia a dia da cafeteria e da Heladeria cria consumo fora das datas de pico.</p></div>
+      <div class="rec"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3v18h18M7 16l4-4 3 3 5-6"/></svg><span class="tag cru">Cruzado</span><h4>Operação contínua de social listening</h4><p>Manter o painel vivo com importação semanal de CSV transforma leitura pontual em decisão recorrente, com nome, dono e meta por semana.</p></div>
+      <div class="rec"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 4h16v4H4zM4 12h10v4H4zM4 20h7"/></svg><span class="tag int">Interno</span><h4>Reforçar a etiqueta nos posts</h4><p>Padronizar tema e tag em cada publicação melhora a leitura de qual linha de produto puxa qual resultado, e torna o próprio dashboard mais preciso.</p></div>
+    </div>
+  </section>
+
+  <!-- SECTION 06 -->
+  <section class="chapter" id="metodologia">
+    <div class="sec-k">06 · Metodologia e fontes</div>
+    <h2 class="sec-h">Tudo o que entrou aqui, e de onde veio.</h2>
+    <div class="method">
+      <div class="card"><span class="tag int">Interno · Reportei</span><h4 style="margin-top:12px">Contas oficiais da Havanna</h4><ul><li>Instagram @havannabr, TikTok @havannabr e Facebook Havanna Brasil Oficial.</li><li>Período de doze meses até junho de 2026, com atualização recente.</li><li>Métricas de alcance, visualizações, engajamento e número de posts.</li><li>Base extraída do Reportei e atualizável por importação de CSV.</li></ul></div>
+      <div class="card"><span class="tag ext">Externo · Cobertura pública</span><h4 style="margin-top:12px">Dados públicos da internet</h4><ul><li>Imprensa de negócios e de varejo, como Exame, Portal IN e Promoview.</li><li>Portais regionais que cobriram cada inauguração de Heladeria.</li><li>Reclame Aqui, lojas físicas e loja virtual, para a voz do consumidor.</li><li>Conversa espontânea e UGC no TikTok e no Instagram.</li></ul></div>
+    </div>
+    <p class="sec-lead tight" style="margin-top:26px">Fontes externas, todas com link clicável e conferíveis na origem.</p>
+    <div class="sourcesGrid" id="sourcesGrid"></div>
+  </section>
+
+  <!-- WORKFLOW -->
+  <div class="workflow">
+    <h3>Como manter o dashboard vivo, semana a semana</h3>
+    <div class="wsub">Seis passos para transformar este painel em uma operação contínua de escuta.</div>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><div><h5>Configurar o Apify</h5><p>Crie atores de extração para os perfis públicos do Instagram, TikTok e Facebook da marca.</p></div></div>
+      <div class="step"><div class="n">2</div><div><h5>Agendar a coleta</h5><p>Defina uma rotina semanal de execução para não depender de coleta manual.</p></div></div>
+      <div class="step"><div class="n">3</div><div><h5>Exportar o CSV</h5><p>Gere o arquivo com as colunas padrão, ou seja, date, platform, type, title, url, reach, views, likes, comments, shares, interactions, theme, sentiment e source.</p></div></div>
+      <div class="step"><div class="n">4</div><div><h5>Importar no painel</h5><p>Use o botão Importar CSV. O dashboard recalcula KPIs, gráficos e listas na hora.</p></div></div>
+      <div class="step"><div class="n">5</div><div><h5>Complementar a escuta</h5><p>Some Google Alerts para imprensa e Brand24 para menções de marca à base interna.</p></div></div>
+      <div class="step"><div class="n">6</div><div><h5>Exportar para compartilhar</h5><p>Use Exportar CSV ou Imprimir para gerar a versão do período que vai para a reunião.</p></div></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="foot">
+    <div class="confid">
+      <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+      <div><div class="ctitle">Documento confidencial</div><p>Este dashboard é um material estratégico e confidencial preparado para a Havanna Brasil. O conteúdo reúne informações públicas e leitura analítica, tem uso restrito e não deve ser compartilhado ou reproduzido sem autorização prévia. Produto desenvolvido e mantido pela Nuts &amp; Co.</p></div>
+    </div>
+    <div class="foot-sign">
+      <div class="nuts">Um produto <b>nuts &amp; co</b></div>
+      <div class="foot-line">Havanna · Marca total · Social Listening · Junho de 2026 · Fontes internas via Reportei e externas públicas conferíveis pelos links · © 2026 Nuts &amp; Co. Todos os direitos reservados.</div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+const DATA = {
+  instagram: [
+    // ===== ATUALIZAÇÃO 09/06/2026 · período 09/05 a 09/06/2026 =====
+    {date:"2026-06-03", title:"Cremosos, irresistíveis e perfeitos para aquecer a rotina...", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:8030, views:10873, interactions:318, likes:216, comments:1, shares:85, rate:3.96, theme:"Heladeria - Outono", sentiment:"positive"},
+    {date:"2026-05-29", title:"Em maio, a Heladeria Havanna celebra 1 ano desde a inauguração", type:"Reels", url:"https://www.facebook.com/havannabrasiloficial/videos/em-maio-a-heladeria-havanna-celebra-1-ano-desde-a-inaugura%C3%A7%C3%A3o-da-sua-primeira-lo/1976805012939971/", reach:3954, views:5698, interactions:211, likes:172, comments:13, shares:17, rate:5.34, theme:"Heladeria - 1 Ano", sentiment:"positive"},
+    {date:"2026-05-30", title:"Friozinho, café quentinho e muuuito Dulce de Leche Tem com...", type:"Imagem", url:"https://www.instagram.com/havannabr/", reach:9115, views:14300, interactions:746, likes:586, comments:8, shares:64, rate:8.18, theme:"Inverno - Dulce de Leche", sentiment:"positive"},
+    {date:"2026-05-24", title:"Sentiu o cheirinho de café dai? Neste Dia Nacional do Ca...", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:4017, views:5085, interactions:110, likes:70, comments:0, shares:34, rate:2.74, theme:"Dia Nacional do Café", sentiment:"positive"},
+    {date:"2026-05-22", title:"Tem novidade nas Cafeterias Havanna Macia, cremosa e com m...", type:"Carrossel", url:"https://www.instagram.com/havannabr/", reach:5471, views:10879, interactions:305, likes:245, comments:3, shares:43, rate:5.57, theme:"Novidade Cafeteria", sentiment:"positive"},
+    {date:"2026-05-09", title:"Novidade que surpreende em cada detalhe: Alfajor Pistache Du...", type:"Imagem", url:"https://www.instagram.com/havannabr/", reach:4357, views:7172, interactions:225, likes:164, comments:4, shares:43, rate:5.16, theme:"Pistache Dubai", sentiment:"positive"},
+    // ===== Snapshot anterior (12 meses) =====
+    {date:"2026-04-15", title:"Zero adição de açúcares, zero lactose... e zero motivos", type:"Imagem", url:"https://www.instagram.com/havannabr/", reach:59053, views:105192, interactions:2534, likes:1194, comments:28, shares:1169, rate:4.29, theme:"Linha YoPro", sentiment:"positive"},
+    {date:"2026-04-25", title:"Tem amor que nasce na primeira colherada. Já experimentou o...", type:"Imagem", url:"https://www.instagram.com/havannabr/", reach:45230, views:88035, interactions:2883, likes:1332, comments:11, shares:1438, rate:6.37, theme:"Heladeria", sentiment:"positive"},
+    {date:"2026-04-10", title:"Tem novidade que chega e já vira favorita 💚 O Alfajor Dub...", type:"Imagem", url:"https://www.instagram.com/havannabr/", reach:19136, views:31853, interactions:1902, likes:843, comments:13, shares:985, rate:9.94, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2025-12-07", title:"Se a dúvida é o presente de Natal...a resposta é Havanna", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:10692, views:12656, interactions:182, likes:92, comments:5, shares:76, rate:1.7, theme:"Natal", sentiment:"positive"},
+    {date:"2025-09-20", title:"Texturas irresistíveis, recheio de dulce de leche e muito c...", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:10587, views:14094, interactions:132, likes:84, comments:2, shares:37, rate:1.25, theme:"Dulce de Leche", sentiment:"positive"},
+    {date:"2026-04-09", title:"Agora é oficial: tem novidade na Havanna. Conheça nosso no...", type:"Imagem", url:"https://www.instagram.com/p/DW97lNVCixk/", reach:10134, views:17881, interactions:597, likes:382, comments:14, shares:185, rate:5.89, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-04-11", title:"Muuuito recheio, muuuito sabor e uma novidade esperando por...", type:"Imagem", url:"https://www.instagram.com/p/DXKjk0wFcZ3/", reach:8189, views:13739, interactions:506, likes:297, comments:7, shares:178, rate:6.18, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2025-11-18", title:"Clássicos que fazem o seu natal ainda mais dulce 🎄✨", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:7795, views:10348, interactions:273, likes:151, comments:7, shares:103, rate:3.5, theme:"Natal", sentiment:"positive"},
+    {date:"2025-12-15", title:"Quatro versões, um mesmo amor: Dulce de Leche Havanna 💛", type:"Imagem", url:"https://www.instagram.com/havannabr/", reach:7533, views:26746, interactions:239, likes:164, comments:2, shares:57, rate:3.17, theme:"Dulce de Leche", sentiment:"positive"},
+    {date:"2025-05-21", title:"Falta só 1 dia para você viver um #DulceMomento como nunca...", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:6927, views:10145, interactions:248, likes:183, comments:0, shares:50, rate:3.58, theme:"Heladeria", sentiment:"positive"},
+    {date:"2026-04-12", title:"Os queridinhos do momento estão por aqui. Alfajor e Creme d...", type:"Imagem", url:"https://www.instagram.com/havannabr/", reach:6875, views:12502, interactions:353, likes:214, comments:0, shares:113, rate:5.13, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2025-05-23", title:"O grande dia chegou! 🤩 A primeira Heladeria Havanna no Bra...", type:"Imagem", url:"https://sejafranqueado.havanna.com.br/porto-alegre-recebe-a-primeira-heladeria-havanna-do-brasil/", reach:6855, views:12382, interactions:194, likes:167, comments:0, shares:22, rate:2.83, theme:"Heladeria - Porto Alegre", sentiment:"positive"},
+    {date:"2026-03-19", title:"Páscoa Havanna: muuuito Dulce de Leche", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:6697, views:9087, interactions:180, likes:101, comments:2, shares:64, rate:2.69, theme:"Páscoa", sentiment:"positive"},
+    {date:"2026-03-31", title:"A sobremesa de Páscoa das cafeterias Havanna chegou: bolo m...", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:6689, views:9487, interactions:258, likes:161, comments:7, shares:78, rate:3.86, theme:"Páscoa", sentiment:"positive"},
+    {date:"2025-09-30", title:"Acabou o suspense: o encontro que você esperava finalmente...", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:6471, views:9109, interactions:276, likes:162, comments:8, shares:87, rate:4.27, theme:"Lançamento", sentiment:"positive"},
+    {date:"2026-04-10", title:"ALERTA DE LANÇAMENTO 💚 Se você ama pistache... se prepara", type:"Reels", url:"https://www.instagram.com/reel/DW87jEyB2Pp/", reach:6304, views:9070, interactions:384, likes:198, comments:9, shares:157, rate:6.09, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-03-26", title:"Chocolate por fora. Muuuito Dulce de Leche por dentro. O tra...", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:6184, views:7665, interactions:164, likes:91, comments:12, shares:49, rate:2.65, theme:"Páscoa", sentiment:"positive"},
+    {date:"2026-04-17", title:"Você só queria experimentar... e acabou se apaixonando por...", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:6145, views:9173, interactions:301, likes:154, comments:32, shares:98, rate:4.9, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-01-19", title:"O seu verão fica melhor com MilkShake Havanna 🥤 Exclusivo e...", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:5829, views:9429, interactions:206, likes:119, comments:7, shares:58, rate:3.53, theme:"Heladeria - Verão", sentiment:"positive"},
+    {date:"2025-11-07", title:"Seu Natal fica #maisdulce com Doce de leite Havanna 💛", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:5624, views:7842, interactions:332, likes:152, comments:8, shares:149, rate:5.9, theme:"Natal", sentiment:"positive"},
+    {date:"2026-02-26", title:"Hoje é o Dia Mundial do Pistache 💚 O queridinho do momento", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:5134, views:7207, interactions:215, likes:143, comments:8, shares:45, rate:4.19, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-03-16", title:"A Páscoa Havanna está chegando. E ela vem com muuuito Dulc...", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:4913, views:7653, interactions:207, likes:125, comments:4, shares:68, rate:4.21, theme:"Páscoa", sentiment:"positive"},
+    {date:"2025-11-22", title:"O encontro que faltava no seu Natal: pistache + dulce de lec...", type:"Reels", url:"https://www.instagram.com/havannabr/", reach:4775, views:6505, interactions:179, likes:93, comments:1, shares:75, rate:3.75, theme:"Natal Pistache", sentiment:"positive"}
+  ],
+  tiktok: [
+    {date:"2026-05-04", title:"Nosso amado dulce de leche chegou pra abrilhantar o tapete vermelho #metgala", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:995128, views:995128, interactions:1078, likes:1060, comments:0, shares:18, theme:"Met Gala / Dulce de Leche", sentiment:"positive"},
+    {date:"2026-05-01", title:"Parada obrigatória do seu feriado #pov #trend #fyp #havanna", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:397, views:397, interactions:4, likes:4, comments:0, shares:0, theme:"Feriado", sentiment:"positive"},
+    {date:"2026-04-17", title:"Você só queria experimentar… e acabou se apaixonando por essa novidade #pistachio", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:698, views:698, interactions:8, likes:8, comments:0, shares:0, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-04-15", title:"Chegou a linha pistache dubaí havanná: intenso, cremoso e simplesmente inesquecível", type:"TikTok", url:"https://www.tiktok.com/@havannabr/search?q=pistache%20dubai", reach:1299273, views:1299273, interactions:1153, likes:1152, comments:0, shares:1, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-04-15", title:"Chegou a linha pistache dubaí havanná (variação 2)", type:"TikTok", url:"https://www.tiktok.com/@havannabr/search?q=pistache%20dubai", reach:1410562, views:1410562, interactions:978, likes:965, comments:0, shares:13, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-04-15", title:"Chegou a linha pistache dubaí havanná (variação 3)", type:"TikTok", url:"https://www.tiktok.com/@havannabr/search?q=pistache%20dubai", reach:462562, views:462562, interactions:541, likes:538, comments:0, shares:3, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-04-10", title:"Alerta de lançamento 💚 se você ama pistache… se prepara. chegou a linha pistache dubaí havanna", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:388, views:388, interactions:12, likes:11, comments:0, shares:1, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-04-09", title:"O sabor mais desejado do momento está chegando. e você vai querer provar.", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:309, views:309, interactions:5, likes:5, comments:0, shares:0, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-04-09", title:"Uma novidade de dar água na boca... e você ainda nem provou.", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:236, views:236, interactions:3, likes:3, comments:0, shares:0, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-04-09", title:"O queridinho do momento está quase chegando. e a vontade só aumenta.", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:278, views:278, interactions:2, likes:2, comments:0, shares:0, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-04-02", title:"Os clássicos da havanna se encontram nesta páscoa. chocolate + alfajor + dulce de leche", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:336, views:336, interactions:6, likes:5, comments:0, shares:1, theme:"Páscoa", sentiment:"positive"},
+    {date:"2026-04-02", title:"Tem combinações que a gente nem sabia que precisava. chocolate branco, limão siciliano, cookies...", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:275, views:275, interactions:8, likes:8, comments:0, shares:0, theme:"Páscoa", sentiment:"positive"},
+    {date:"2026-04-02", title:"Chocolate por fora. muuuito dulce de leche por dentro. o tradicional chocolate com dulce de leche da páscoa havanna", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:208, views:208, interactions:6, likes:6, comments:0, shares:0, theme:"Páscoa", sentiment:"positive"},
+    {date:"2026-03-26", title:"A páscoa fica ainda melhor quando vem em dose dupla. exclusivo nas heladerias havanna", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:431, views:431, interactions:25, likes:24, comments:0, shares:1, theme:"Heladeria - Páscoa", sentiment:"positive"},
+    {date:"2026-03-20", title:"Páscoa havanna: muuuito dulce de leche", type:"TikTok", url:"https://www.tiktok.com/@havannabr", reach:417, views:417, interactions:6, likes:5, comments:0, shares:1, theme:"Páscoa", sentiment:"positive"}
+  ],
+  facebook: [
+    // ===== ATUALIZAÇÃO 09/06/2026 · período 09/05 a 09/06/2026 =====
+    {date:"2026-06-03", title:"Cremosos, irresistíveis e perfeitos para aquecer a rotina, ...", type:"Reel", url:"https://www.facebook.com/HavannaBrasilOficial", reach:398, views:393, interactions:4, likes:4, comments:0, shares:0, theme:"Heladeria - Outono", sentiment:"positive"},
+    {date:"2026-05-30", title:"Cremosa, deliciosa e cheia de camadas irresistíveis Conhe...", type:"Reel", url:"https://www.facebook.com/HavannaBrasilOficial", reach:278, views:269, interactions:4, likes:4, comments:0, shares:0, theme:"Novidade Cafeteria", sentiment:"positive"},
+    {date:"2026-05-29", title:"Em maio, a Heladeria Havanna celebra 1 ano desde a inaugurac...", type:"Reel", url:"https://www.facebook.com/havannabrasiloficial/videos/em-maio-a-heladeria-havanna-celebra-1-ano-desde-a-inaugura%C3%A7%C3%A3o-da-sua-primeira-lo/1976805012939971/", reach:281, views:285, interactions:3, likes:3, comments:0, shares:0, theme:"Heladeria - 1 Ano", sentiment:"positive"},
+    {date:"2026-05-24", title:"Sentiu o cheirinho de café dai? Neste Dia Nacional do Ca...", type:"Reel", url:"https://www.facebook.com/HavannaBrasilOficial", reach:322, views:367, interactions:5, likes:5, comments:0, shares:0, theme:"Dia Nacional do Café", sentiment:"positive"},
+    {date:"2026-05-20", title:"Aquele clássico argentino que transforma qualquer pausa do...", type:"Álbum", url:"https://www.facebook.com/HavannaBrasilOficial", reach:14923, views:0, interactions:2966, likes:2870, comments:12, shares:31, theme:"Café Tradicional", sentiment:"positive"},
+    {date:"2026-05-18", title:"Macia por dentro, dourada por fora e irresistível em cada c...", type:"Álbum", url:"https://www.facebook.com/HavannaBrasilOficial", reach:13049, views:0, interactions:2391, likes:2321, comments:7, shares:37, theme:"Cafeteria", sentiment:"positive"},
+    // ===== Snapshot anterior (12 meses) =====
+    {date:"2026-05-10", title:"Mãe é quem transforma o simples em especial, e o dia a dia...", type:"Reel", url:"https://www.facebook.com/HavannaBrasilOficial", reach:58819, views:47882, interactions:18, likes:16, comments:2, shares:0, theme:"Dia das Mães", sentiment:"positive"},
+    {date:"2026-04-25", title:"Tem amor que nasce na primeira colherada. Já experimentou o...", type:"Foto", url:"https://www.facebook.com/HavannaBrasilOficial", reach:15849, views:0, interactions:1910, likes:1902, comments:9, shares:27, theme:"Heladeria", sentiment:"positive"},
+    {date:"2026-05-05", title:"Pra deixar o Dia das Mães ainda mais doce. Dulce de Leche 4...", type:"Foto", url:"https://www.facebook.com/HavannaBrasilOficial", reach:12874, views:0, interactions:1841, likes:1825, comments:7, shares:15, theme:"Dia das Mães", sentiment:"positive"},
+    {date:"2026-05-15", title:"Aquele clássico argentino que transforma qualquer pausa do...", type:"Álbum", url:"https://www.facebook.com/HavannaBrasilOficial", reach:10375, views:0, interactions:2101, likes:2077, comments:8, shares:24, theme:"Café", sentiment:"positive"},
+    {date:"2026-05-09", title:"Novidade que surpreende em cada detalhe: Alfajor Pistache Du...", type:"Foto", url:"https://www.facebook.com/HavannaBrasilOficial", reach:9491, views:0, interactions:781, likes:766, comments:4, shares:15, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-04-20", title:"Nosso feed tá todo verde por um motivo muuuito saboroso…", type:"Reel", url:"https://www.facebook.com/reel/1301537885210479/", reach:206, views:206, interactions:5, likes:5, comments:0, shares:0, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2026-04-24", title:"Um brinde ao sabor mais desejado do momento: pistache.", type:"Reel", url:"https://www.facebook.com/reel/843958558066781/", reach:188, views:188, interactions:4, likes:4, comments:0, shares:0, theme:"Pistache Dubai", sentiment:"positive"},
+    {date:"2025-07-27", title:"Quem divide, amigo é 😋 Marca aqui aquela pessoa que você...", type:"Reel", url:"https://www.facebook.com/HavannaBrasilOficial", reach:1670, views:1538, interactions:4, likes:4, comments:0, shares:0, theme:"Amizade", sentiment:"positive"},
+    {date:"2025-05-21", title:"Falta só 1 dia para você viver um #DulceMomento como nunca...", type:"Reel", url:"https://www.facebook.com/HavannaBrasilOficial", reach:763, views:770, interactions:17, likes:11, comments:6, shares:0, theme:"Heladeria", sentiment:"positive"},
+    {date:"2025-11-22", title:"O encontro que faltava no seu Natal: pistache + dulce de lec...", type:"Reel", url:"https://www.facebook.com/HavannaBrasilOficial", reach:645, views:651, interactions:10, likes:9, comments:0, shares:1, theme:"Natal Pistache", sentiment:"positive"},
+    {date:"2026-02-11", title:"Vannaccino de Yopro, a dose certa de proteína com muuuito D...", type:"Reel", url:"https://www.facebook.com/HavannaBrasilOficial", reach:529, views:489, interactions:6, likes:6, comments:0, shares:0, theme:"YoPro", sentiment:"positive"}
+  ],
+  imprensa: [
+    // ===== ATUALIZAÇÃO 09/06/2026 · período 09/05 a 09/06/2026 =====
+    {date:"2026-05-29", title:"Em maio, a Heladeria Havanna celebra 1 ano desde a inauguração da sua primeira loja no Brasil", source:"Havanna Brasil Oficial (FB)", url:"https://www.facebook.com/havannabrasiloficial/videos/em-maio-a-heladeria-havanna-celebra-1-ano-desde-a-inaugura%C3%A7%C3%A3o-da-sua-primeira-lo/1976805012939971/", theme:"Heladeria - 1 Ano", sentiment:"positive"},
+    {date:"2026-05-25", title:"Primeira unidade híbrida da Havanna é inaugurada em Passo Fundo, no Rio Grande do Sul", source:"Havanna Franquias", url:"https://sejafranqueado.havanna.com.br/primeira-unidade-hibrida-da-havanna-e-inaugurada-em-passo-fundo-no-rio-grande-do-sul/", theme:"Inauguração Passo Fundo", sentiment:"positive"},
+    {date:"2026-05-15", title:"Havanna Heladeria inaugura no Uberlândia Shopping e amplia experiências gastronômicas", source:"W3 Notícias", url:"https://www.w3noticias.com.br/2026/04/havanna-heladeria-inaugura-no.html", theme:"Inauguração Uberlândia", sentiment:"positive"},
+    {date:"2026-05-12", title:"Havanna Heladeria inaugura no Uberlândia Shopping", source:"Na Hora do Brasil", url:"https://www.nahoradobrasil.com.br/2026/04/havanna-heladeria-inaugura-no.html", theme:"Inauguração Uberlândia", sentiment:"positive"},
+    {date:"2026-05-10", title:"Havanna Heladeria inaugura no Uberlândia Shopping e amplia experiências gastronômicas", source:"Revista Soberana", url:"https://revistasoberana.com.br/2026/04/10/havanna-heladeria-inaugura-no-uberlandia-shopping-e-amplia-experiencias-gastronomicas-do-empreendimento/", theme:"Inauguração Uberlândia", sentiment:"positive"},
+    // ===== Snapshot anterior (12 meses) =====
+    {date:"2025-05-15", title:"Do alfajor ao sorvete: Havanna anuncia franquia de sorvete para R$ 550 mi no Brasil", source:"Exame", url:"https://exame.com/negocios/do-alfajor-ao-sorvete-havanna-anuncia-franquia-de-sorvete-para-alcancar-r-550-milhoes-no-brasil/", theme:"Anúncio Heladeria", sentiment:"positive"},
+    {date:"2025-05-20", title:"Heladeria Havanna chega ao Brasil com sorvetes artesanais e expansão ambiciosa", source:"FoodBiz Brasil", url:"https://foodbizbrasil.com/negocios/heladeria-havanna-chega-ao-brasil-com-sorvetes-artesanais-e-expansao-ambiciosa/", theme:"Conceito Heladeria", sentiment:"positive"},
+    {date:"2025-05-23", title:"Porto Alegre recebe a primeira Heladeria Havanna do Brasil", source:"Havanna Franquias", url:"https://sejafranqueado.havanna.com.br/porto-alegre-recebe-a-primeira-heladeria-havanna-do-brasil/", theme:"Inauguração POA", sentiment:"positive"},
+    {date:"2025-06-10", title:"Shopping Anália Franco recebe a primeira Heladeria Havanna de São Paulo", source:"Havanna Franquias", url:"https://sejafranqueado.havanna.com.br/shopping-analia-franco-recebe-a-primeira-heladeria-havanna-de-sao-paulo/", theme:"Inauguração SP", sentiment:"positive"},
+    {date:"2025-06-15", title:"São Paulo ganha a 1ª Heladeria Havanna", source:"Guia da Semana", url:"https://www.guiadasemana.com.br/gastronomia/noticia/havanna-inaugura-primira-sorveteria-artesanal-da-marca", theme:"Inauguração SP", sentiment:"positive"},
+    {date:"2025-07-08", title:"Havanna inaugura primeira gelateria artesanal em SP e acelera expansão no Brasil", source:"dComércio", url:"https://dcomercio.com.br/publicacao/s/havanna-inaugura-primeira-gelateria-artesanal-em-sp-e-acelera-expansao-no-brasil", theme:"Expansão", sentiment:"positive"},
+    {date:"2025-07-15", title:"Heladeria Havanna: o autêntico helado argentino, agora no Brasil", source:"Havanna Franquias", url:"https://sejafranqueado.havanna.com.br/heladeria-havanna-o-autentico-helado-argentino-agora-no-brasil/", theme:"Posicionamento", sentiment:"positive"},
+    {date:"2025-08-12", title:"Havanna abre primeira heladeria em Congonhas: entenda o conceito", source:"Promoview", url:"https://www.promoview.com.br/havanna-congonhas-helateria-pdv", theme:"Inauguração Congonhas", sentiment:"positive"},
+    {date:"2025-08-29", title:"Heladeria Havanna no Recife após estreia em Salvador", source:"Movimento Econômico", url:"https://movimentoeconomico.com.br/geral/redacao/2025/08/29/heladeria-havanna-abrira-unidade-no-recife-apos-estreia-em-salvador/", theme:"Inauguração Nordeste", sentiment:"positive"},
+    {date:"2025-09-10", title:"Havanna inaugura Heladeria no aeroporto de Florianópolis", source:"Havanna Franquias", url:"https://sejafranqueado.havanna.com.br/havanna-inaugura-heladeria-no-aeroporto-de-florianopolis/", theme:"Inauguração FLN", sentiment:"positive"},
+    {date:"2025-10-05", title:"Havanna inaugura primeira heladeria no Rio de Janeiro", source:"Havanna Franquias", url:"https://sejafranqueado.havanna.com.br/havanna-inaugura-primeira-heladeria-no-rio-de-janeiro/", theme:"Inauguração RJ", sentiment:"positive"},
+    {date:"2025-10-20", title:"Com alma argentina, Havanna estreia rede de sorveterias artesanais no Brasil", source:"Portal IN", url:"https://www.portalin.com.br/negocios/com-alma-argentina-havanna-estreia-rede-de-sorveterias-artesanais-no-brasil/", theme:"Conceito", sentiment:"positive"},
+    {date:"2025-11-08", title:"Sorvete premium de doce de leite: marca argentina chega com Heladeria ao ES", source:"Folha Vitória", url:"https://www.folhavitoria.com.br/economia/sorvete-premium-de-doce-de-leite-marca-argentina-chega-com-heladeria-ao-es/", theme:"Inauguração ES", sentiment:"positive"},
+    {date:"2025-11-15", title:"Te Quiero, Verão · nova fase com foco em helados premium", source:"Marcas pelo Mundo", url:"https://marcaspelomundo.com.br/anunciantes/te-quiero-verao-marca-nova-fase-da-havanna-com-foco-em-helados-premium/", theme:"Campanha Verão", sentiment:"positive"},
+    {date:"2025-12-02", title:"Havanna aposta em sorvetes e expande portfólio para o verão", source:"BHB Food", url:"https://bhbfood.com/negocios/havanna-aposta-em-sorvetes-e-expande-portfolio-para-o-verao/", theme:"Campanha Verão", sentiment:"positive"},
+    {date:"2026-01-15", title:"Heladeria em Sete Lagoas amplia presença em Minas Gerais", source:"Mapa das Franquias", url:"https://mapadasfranquias.com.br/noticia/havanna-inaugura-primeira-heladeria-em-sete-lagoas-e-amplia-presenca-em-minas-gerais/", theme:"Inauguração MG", sentiment:"positive"},
+    {date:"2026-02-20", title:"Havanna inaugura primeira Heladeria no Piauí, em Teresina", source:"Havanna Franquias", url:"https://sejafranqueado.havanna.com.br/havanna-inaugura-primeira-heladeria-no-piaui-em-teresina/", theme:"Inauguração PI", sentiment:"positive"},
+    {date:"2026-04-01", title:"Heladeria Havanna inaugura em SJC com sorvetes para apaixonados por doce de leite", source:"SP Rio Mais", url:"https://spriomais.com.br/2026/04/01/heladeria-havanna-inaugura-em-sao-jose-com-sorvetes-para-os-apaixonados-por-doce-de-leite/", theme:"Inauguração SJC", sentiment:"positive"},
+    {date:"2026-04-15", title:"Chocolate de Dubai que virou sensação no TikTok chega ao Brasil", source:"TudoGostoso", url:"https://www.tudogostoso.com.br/noticias/chocolate-de-dubai-que-virou-sensacao-no-tiktok-chega-ao-brasil-o-que-torna-o-doce-recheado-com-creme-pistache-tao-especial-a16894.htm", theme:"Trend Pistache", sentiment:"positive"},
+    {date:"2026-04-20", title:"Furor por el alfajor de pistacho Havanna: la joya más viral del momento", source:"Los Andes (AR)", url:"https://www.losandes.com.ar/sociedad/furor-el-alfajor-pistacho-havanna-luccianos-la-joya-mas-viral-del-momento-n5955434", theme:"Trend Pistache Argentina", sentiment:"positive"}
+  ],
+  reclame: [
+    {date:"2025-09-15", title:"Sorvete chegando derretido na entrega do site (loja virtual)", source:"Reclame Aqui Loja Virtual", url:"https://www.reclameaqui.com.br/empresa/havanna-loja-virtual/lista-reclamacoes/", theme:"Logística", sentiment:"negative"},
+    {date:"2025-10-04", title:"Pedido incompleto: brownie sem sorvete por falta de estoque na cafeteria", source:"Reclame Aqui Físicas", url:"https://www.reclameaqui.com.br/empresa/havanna-lojas-fisicas/lista-reclamacoes/", theme:"Atendimento", sentiment:"negative"},
+    {date:"2025-11-12", title:"Doce de leite cristalizado com gosto ruim", source:"Reclame Aqui Físicas", url:"https://www.reclameaqui.com.br/empresa/havanna-lojas-fisicas/lista-reclamacoes/", theme:"Produto", sentiment:"negative"},
+    {date:"2025-12-08", title:"Tempo de resposta acima de 5 dias na loja virtual", source:"Reclame Aqui Loja Virtual", url:"https://www.reclameaqui.com.br/empresa/havanna-loja-virtual/", theme:"SAC", sentiment:"negative"},
+    {date:"2026-01-22", title:"Ovo de Páscoa recebido com validade vencida via app Familhão", source:"Reclame Aqui Físicas", url:"https://www.reclameaqui.com.br/empresa/havanna-lojas-fisicas/lista-reclamacoes/", theme:"Produto", sentiment:"negative"},
+    {date:"2026-02-14", title:"Falta de atendimento na unidade após reclamação no site", source:"Reclame Aqui Físicas", url:"https://www.reclameaqui.com.br/empresa/havanna-lojas-fisicas/lista-reclamacoes/", theme:"SAC", sentiment:"negative"},
+    {date:"2026-03-05", title:"Reclamação consolidada · 236 menções 12 meses · 51,3% resposta · 4,35/5 · 38,3% voltariam", source:"Reclame Aqui Físicas (Página)", url:"https://www.reclameaqui.com.br/empresa/havanna-lojas-fisicas/", theme:"Resumo", sentiment:"neutral"},
+    {date:"2026-03-05", title:"Reclamação consolidada · 87 menções · 6,9% resposta · 'Não recomendado'", source:"Reclame Aqui Loja Virtual (Página)", url:"https://www.reclameaqui.com.br/empresa/havanna-loja-virtual/", theme:"Resumo", sentiment:"negative"}
+  ],
+  ugc: [
+    {date:"2025-08-12", title:"Reseña del nuevo alfajor Havanna Dubai - el primer alfajor con pistacho de Havanna!", source:"TikTok @agusfoche_", url:"https://www.tiktok.com/@agusfoche_/video/7524838010697895224", theme:"UGC Pistache", sentiment:"positive"},
+    {date:"2025-08-15", title:"Nuevo alfajor Dubai de HAVANNA", source:"TikTok @leandrin.b", url:"https://www.tiktok.com/@leandrin.b/video/7525926543038713094", theme:"UGC Pistache", sentiment:"positive"},
+    {date:"2025-08-10", title:"Se viene el alfajor dubai en havanna #marketing #chocolatedubai", source:"TikTok @sabrikolod", url:"https://www.tiktok.com/@sabrikolod/video/7523692683022372102", theme:"UGC Pistache", sentiment:"positive"},
+    {date:"2025-08-16", title:"Probamos el alfajor dubai viral de Havanna 😋 #chocolatedubai #havanna", source:"TikTok @cami.vergara17", url:"https://www.tiktok.com/@cami.vergara17/video/7525971267866856710", theme:"UGC Pistache", sentiment:"positive"},
+    {date:"2025-09-02", title:"Probando el Alfajor Dubai 💚 #havanna #pistacho", source:"TikTok @juliju.okk", url:"https://www.tiktok.com/@juliju.okk/video/7528392616711359800", theme:"UGC Pistache", sentiment:"positive"},
+    {date:"2025-07-20", title:"VOCÊS SABIAM QUE EXISTE GELATO DA HAVANNA?", source:"Instagram Discovery (UGC)", url:"https://www.instagram.com/explore/search/keyword/?q=heladeria%20havanna", theme:"Discovery Heladeria", sentiment:"positive"},
+    {date:"2025-09-25", title:"Vc já experimentou os helados da Heladeria Havanna?", source:"Instagram Discovery (UGC)", url:"https://www.instagram.com/explore/search/keyword/?q=heladeria%20havanna", theme:"Discovery Heladeria", sentiment:"positive"},
+    {date:"2026-04-16", title:"Discussão sobre alfajor Havanna Aniversario 2026 (compilado TikTok)", source:"TikTok Discover", url:"https://www.tiktok.com/discover/alfajor-havanna-aniversario-2026", theme:"UGC Aniversario", sentiment:"positive"},
+    {date:"2026-04-18", title:"Compilado UGC Havanna Alfajor Pistachos (TikTok Discover)", source:"TikTok Discover", url:"https://www.tiktok.com/discover/havanna-alfajor-pistachos", theme:"UGC Pistache", sentiment:"positive"},
+    {date:"2026-04-19", title:"Compilado UGC Havanna Alfajor Dubai (TikTok Discover)", source:"TikTok Discover", url:"https://www.tiktok.com/discover/havanna-alfajor-dubai", theme:"UGC Pistache", sentiment:"positive"},
+    {date:"2026-04-22", title:"¿Qué es el chocolate Dubai y por qué todos hablan de él? · Análise Pampa Direct", source:"Pampa Direct", url:"https://pampadirect.com/blog/alfajor-havanna-dubai-que-es-y-donde-conseguirlo", theme:"Análise Pistache", sentiment:"positive"}
+  ]
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let state = { preset: "12m", startDate: null, endDate: null, activeTab: "instagram" };
+const today = new Date('2026-06-19');
+function fmtDate(d){ return d.toISOString().slice(0,10); }
+
+function applyPreset(preset){
+  state.preset = preset;
+  const end = new Date(today);
+  let start = new Date(today);
+  switch(preset){
+    case "today": break;
+    case "yesterday": start.setDate(start.getDate()-1); end.setDate(end.getDate()-1); break;
+    case "7d": start.setDate(start.getDate()-7); break;
+    case "30d": start.setDate(start.getDate()-30); break;
+    case "90d": start.setDate(start.getDate()-90); break;
+    case "12m": start.setFullYear(start.getFullYear()-1); break;
+    case "custom": return;
+  }
+  state.startDate = fmtDate(start);
+  state.endDate = fmtDate(end);
+  document.getElementById('startDate').value = state.startDate;
+  document.getElementById('endDate').value = state.endDate;
+  updatePeriodLabel();
+  renderAll();
+}
+function updatePeriodLabel(){
+  document.getElementById('chartPeriod').textContent = `${state.startDate} até ${state.endDate}`;
+}
+function filterByDate(items){
+  return items.filter(i => i.date >= state.startDate && i.date <= state.endDate);
+}
+
+// ============================================================
+// FORMAT + UTILS
+// ============================================================
+const ICONS = {
+  instagram:{cls:"icon-ig",txt:"IG"}, tiktok:{cls:"icon-tt",txt:"TT"}, facebook:{cls:"icon-fb",txt:"FB"},
+  imprensa:{cls:"icon-news",txt:"IM"}, reclame:{cls:"icon-ra",txt:"RA"}, ugc:{cls:"icon-tt",txt:"UGC"}
+};
+const LEGEND_TAG = {
+  instagram:'<span class="legend-chip chip-internal">INTERNO</span>',
+  tiktok:'<span class="legend-chip chip-internal">INTERNO</span>',
+  facebook:'<span class="legend-chip chip-internal">INTERNO</span>',
+  imprensa:'<span class="legend-chip chip-external">EXTERNO</span>',
+  reclame:'<span class="legend-chip chip-external">EXTERNO</span>',
+  ugc:'<span class="legend-chip chip-external">EXTERNO</span>'
+};
+function fmtNum(n){
+  if(n===undefined||n===null||n===0) return "—";
+  if(n>=1000000) return (n/1000000).toFixed(2).replace(/\.00$/,'').replace(/(\.\d)0$/,'$1')+"M";
+  if(n>=1000) return (n/1000).toFixed(1).replace(/\.0$/,'')+"K";
+  return n.toLocaleString('pt-BR');
+}
+
+// ============================================================
+// RENDER LISTS
+// ============================================================
+function renderList(category){
+  const items = filterByDate(DATA[category]||[]).sort((a,b)=> (b.reach||b.views||0)-(a.reach||a.views||0));
+  const container = document.getElementById(`list-${category}`);
+  const counter = document.getElementById(`count-${category}`);
+  if(counter) counter.textContent = items.length;
+  if(!container) return;
+  if(items.length===0){
+    container.innerHTML = `<div class="empty-state">Nenhum item para o período <strong>${state.startDate} até ${state.endDate}</strong>. Ajuste a data ou importe um novo CSV.</div>`;
+    return;
+  }
+  container.innerHTML = items.map(item=>{
+    const icon = ICONS[category]; const tag = LEGEND_TAG[category];
+    const big = item.reach||item.views||0;
+    let meta = "";
+    if(category==="instagram"||category==="facebook"){
+      meta = `${item.type||""} · ${fmtNum(item.reach)} alcance · ${fmtNum(item.interactions)} interações · ${fmtNum(item.likes)} curtidas · <span style="color:var(--gold)">${item.theme}</span> · ${item.date}`;
+    } else if(category==="tiktok"){
+      meta = `TikTok @havannabr · ${fmtNum(item.views)} views · ${fmtNum(item.likes)} curtidas · ${item.comments} comentários · <span style="color:var(--gold)">${item.theme}</span> · ${item.date}`;
+    } else if(category==="imprensa"){
+      meta = `<strong>${item.source}</strong> · <span style="color:var(--gold)">${item.theme}</span> · ${item.date}`;
+    } else if(category==="reclame"){
+      meta = `<strong>${item.source}</strong> · <span style="color:var(--pink)">${item.theme}</span> · ${item.date}`;
+    } else if(category==="ugc"){
+      meta = `<strong>${item.source}</strong> · <span style="color:var(--gold)">${item.theme}</span> · ${item.date}`;
+    }
+    return `<a href="${item.url}" target="_blank" rel="noopener noreferrer" class="post-item">
+      <div class="post-icon ${icon.cls}">${icon.txt}</div>
+      <div><div class="post-title">${item.title} <span class="external-arrow">&#8599;</span> ${tag}</div><div class="post-meta">${meta}</div></div>
+      <div class="post-num">${big?fmtNum(big):"—"}</div></a>`;
+  }).join('');
+}
+
+function renderSources(){
+  const sources = [...DATA.imprensa, ...DATA.reclame, ...DATA.ugc.filter(u=> u.source.includes("Pampa")||u.source.includes("Discover"))];
+  const grid = document.getElementById('sourcesGrid');
+  grid.innerHTML = sources.map(s=>`<div class="source-card"><span class="legend-chip chip-external">EXTERNO</span> <strong style="margin-left:6px">${s.source}</strong><br><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.title}</a><div class="source-meta">${s.theme} · ${s.date}</div></div>`).join('');
+}
+
+// ============================================================
+// KPIs
+// ============================================================
+function recalcKPIs(){
+  const allInternal = filterByDate([...DATA.instagram, ...DATA.tiktok, ...DATA.facebook]);
+  const totalReach = allInternal.reduce((s,p)=> s+(p.reach||0),0);
+  const totalViews = allInternal.reduce((s,p)=> s+(p.views||0),0);
+  const totalEng = allInternal.reduce((s,p)=> s+(p.interactions||0),0);
+  const totalPosts = allInternal.length;
+  const externalCount = filterByDate([...DATA.imprensa, ...DATA.reclame, ...DATA.ugc]).length;
+  let topItem=null, topVal=0;
+  allInternal.forEach(p=>{ const v=p.reach||p.views||0; if(v>topVal){topVal=v;topItem=p;} });
+  document.getElementById('kpi-alcance').textContent = fmtNum(totalReach+totalViews);
+  document.getElementById('kpi-eng').textContent = fmtNum(totalEng);
+  document.getElementById('kpi-posts').textContent = totalPosts;
+  document.getElementById('kpi-top').textContent = topItem?fmtNum(topVal):"—";
+  document.getElementById('kpi-top-desc').textContent = topItem?(topItem.title.slice(0,52)+(topItem.title.length>52?"":"")):"—";
+  document.getElementById('kpi-ext').textContent = externalCount;
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+let reachChart, platformChart, sentimentChart, mentionsChart;
+function buildCharts(){
+  const ctx1=document.getElementById('reachChart').getContext('2d');
+  const ctx2=document.getElementById('platformChart').getContext('2d');
+  const ctx3=document.getElementById('sentimentChart').getContext('2d');
+  const ctx4=document.getElementById('mentionsChart').getContext('2d');
+
+  const all = filterByDate([...DATA.instagram, ...DATA.tiktok, ...DATA.facebook]);
+  const byMonth={};
+  all.forEach(p=>{ const m=p.date.slice(0,7); byMonth[m]=(byMonth[m]||0)+(p.reach||p.views||0); });
+  const months=Object.keys(byMonth).sort();
+  const reachData=months.map(m=>byMonth[m]);
+  if(reachChart) reachChart.destroy();
+  reachChart=new Chart(ctx1,{type:'line',data:{labels:months,datasets:[{label:'Alcance + views',data:reachData,borderColor:'#FF7A1A',backgroundColor:'rgba(255,122,26,0.14)',borderWidth:3,fill:true,tension:0.4,pointBackgroundColor:'#FFCD00',pointBorderColor:'#FF7A1A',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#A8A1B2'}}},scales:{x:{ticks:{color:'#A8A1B2'},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#A8A1B2',callback:v=>fmtNum(v)},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+
+  const ig=filterByDate(DATA.instagram).reduce((s,p)=>s+(p.reach||0),0);
+  const tt=filterByDate(DATA.tiktok).reduce((s,p)=>s+(p.views||0),0);
+  const fb=filterByDate(DATA.facebook).reduce((s,p)=>s+(p.reach||0),0);
+  if(platformChart) platformChart.destroy();
+  platformChart=new Chart(ctx2,{type:'doughnut',data:{labels:['Instagram','TikTok','Facebook'],datasets:[{data:[ig,tt,fb],backgroundColor:['#E1306C','#FF5C8A','#1877f2'],borderColor:'#15121C',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#A8A1B2',padding:14}}}}});
+
+  const allItems=filterByDate([...DATA.instagram, ...DATA.tiktok, ...DATA.facebook, ...DATA.imprensa, ...DATA.reclame, ...DATA.ugc]);
+  const sent={positive:0,neutral:0,negative:0};
+  allItems.forEach(i=> sent[i.sentiment||'neutral']++);
+  if(sentimentChart) sentimentChart.destroy();
+  sentimentChart=new Chart(ctx3,{type:'bar',data:{labels:['Positivo','Neutro','Crítico'],datasets:[{data:[sent.positive,sent.neutral,sent.negative],backgroundColor:['#5FE0A0','#FFCD00','#FF5C8A'],borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#A8A1B2'},grid:{display:false}},y:{ticks:{color:'#A8A1B2'},grid:{color:'rgba(255,255,255,0.04)'}}}}});
+
+  const sourceCount={};
+  filterByDate(DATA.imprensa).forEach(m=>{ sourceCount[m.source]=(sourceCount[m.source]||0)+1; });
+  const sorted=Object.entries(sourceCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(mentionsChart) mentionsChart.destroy();
+  mentionsChart=new Chart(ctx4,{type:'bar',data:{labels:sorted.map(s=>s[0]),datasets:[{data:sorted.map(s=>s[1]),backgroundColor:['#FFCD00','#FF7A1A','#5FE0A0','#5AA8FF','#B98CF0','#FF5C8A','#D7BE7E','#FF3B46','#FFCD00','#5AA8FF'],borderRadius:6}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#A8A1B2'},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#A8A1B2',font:{size:10}},grid:{display:false}}}}});
+}
+
+function renderAll(){
+  ['instagram','tiktok','facebook','imprensa','reclame','ugc'].forEach(renderList);
+  recalcKPIs();
+  buildCharts();
+}
+
+// ============================================================
+// CSV
+// ============================================================
+function exportToCSV(){
+  const rows=[['date','platform','type','title','url','reach','views','likes','comments','shares','interactions','theme','sentiment','source']];
+  ['instagram','tiktok','facebook'].forEach(p=>{ filterByDate(DATA[p]).forEach(i=>{ rows.push([i.date,p,i.type||'',i.title,i.url,i.reach||'',i.views||'',i.likes||'',i.comments||'',i.shares||'',i.interactions||'',i.theme,i.sentiment,'']); }); });
+  ['imprensa','reclame','ugc'].forEach(p=>{ filterByDate(DATA[p]).forEach(i=>{ rows.push([i.date,p,'',i.title,i.url,'','','','','','',i.theme,i.sentiment,i.source||'']); }); });
+  const csv=Papa.unparse(rows);
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download=`havanna-marca-total-${state.startDate}-${state.endDate}.csv`;
+  link.click();
+}
+function importCSV(event){
+  const file=event.target.files[0]; if(!file) return;
+  Papa.parse(file,{header:true,skipEmptyLines:true,complete:(res)=>{
+    const added={instagram:0,tiktok:0,facebook:0,imprensa:0,reclame:0,ugc:0};
+    res.data.forEach(row=>{
+      const p=(row.platform||'').toLowerCase().trim();
+      if(!DATA[p]) return;
+      DATA[p].push({date:row.date,title:row.title||'',url:row.url||'#',type:row.type||'',reach:+row.reach||0,views:+row.views||0,likes:+row.likes||0,comments:+row.comments||0,shares:+row.shares||0,interactions:+row.interactions||0,theme:row.theme||'Geral',sentiment:row.sentiment||'neutral',source:row.source||''});
+      added[p]++;
+    });
+    renderAll(); renderSources();
+    alert(`Importação concluída. Itens adicionados:\nInstagram ${added.instagram} · TikTok ${added.tiktok} · Facebook ${added.facebook}\nImprensa ${added.imprensa} · Reclame ${added.reclame} · UGC ${added.ugc}`);
+  }});
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.querySelectorAll('.preset-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    applyPreset(btn.dataset.preset);
+  });
+});
+document.getElementById('startDate').addEventListener('change',e=>{
+  state.startDate=e.target.value; state.preset="custom";
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('[data-preset="custom"]').classList.add('active');
+  updatePeriodLabel(); renderAll();
+});
+document.getElementById('endDate').addEventListener('change',e=>{
+  state.endDate=e.target.value; state.preset="custom";
+  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('[data-preset="custom"]').classList.add('active');
+  updatePeriodLabel(); renderAll();
+});
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+    state.activeTab=tab.dataset.tab;
+  });
+});
+const navSections=document.querySelectorAll('section.chapter');
+const navLinks=document.querySelectorAll('.nav-side a');
+window.addEventListener('scroll',()=>{
+  let current=''; navSections.forEach(sec=>{ if(window.scrollY>=sec.offsetTop-220) current=sec.id; });
+  navLinks.forEach(link=> link.classList.toggle('current', link.dataset.nav===current));
+});
+applyPreset("12m");
+renderSources();
+</script>
+</body>
+</html>
