@@ -235,7 +235,8 @@ class Captions:
         out = []
         n = int(round(t * FPS))
         for c in self.cards:
-            if not (c['t0'] - 1e-6 <= t < c['t1'] - 1e-6):
+            # compare whole frames: times are stored rounded to 5 decimals and can sit a hair after the frame
+            if not (int(round(c['t0'] * FPS)) <= n < int(round(c['t1'] * FPS))):
                 continue
             f = n - int(round(c['t0'] * FPS))  # frame index inside the card
             if c['tier'] == 'orange':
@@ -263,7 +264,7 @@ class Captions:
                 lines = self.white_lines(c)
                 for li, L in enumerate(lines):
                     t_on = c['t0'] if li == 0 else c.get('t_line2', c['lines'][li][0]['t'])
-                    if t < t_on - 1e-6:
+                    if n < int(round(t_on * FPS)):
                         continue
                     fl = n - int(round(t_on * FPS))
                     e = c.get('entry', 'cut') if li == 0 else c.get('line2_entry', 'cut')
@@ -279,7 +280,7 @@ class Captions:
                 m = self.cache.setdefault(('ht', id(c)), self._hook_canvas(tops))
                 out.append((m, WHITE['fill'], 1.0, 0, 0, True, 1.0))
                 ts = c.get('t_sub', c['sub'][0]['t'])
-                if t >= ts:
+                if n >= int(round(ts * FPS)):
                     f2 = n - int(round(ts * FPS))
                     seq = [(30, 0.0), (15, .3), (4.5, .6)]
                     dy, op = seq[f2] if f2 < len(seq) else (0, 1.0)
