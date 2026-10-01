@@ -1,18 +1,18 @@
 """Contextual UI elements drawn in front of the video, in the reference's visual language
 (orange #FC7D01, Instrument Sans Bold for labels, Bebas Neue for numbers, dark translucent panels).
-Kept in the safe band 23%-69% of the height so nothing collides with the Reels interface.
+Kept above max_bottom (default 68% of the height, per element) so nothing collides with the Reels interface.
 
 element types (times in seconds on the output timeline):
   card      {title, subtitle?, icon, y}
-  checklist {items:[{text, t, icon?}], y}
+  checklist {items:[{text, t, icon?}], y, layout: column|row}
   counter   {to, from?, prefix?, suffix?, label?, y, count_dur?}
-  versus    {left:{title, sub?, icon?}, right:{...}, left_t?, right_t?, y}
+  versus    {left:{title, sub?, icon?}, right:{...}, left_t?, right_t?, y, reveal?: right column hidden until right_t}
   cta       {text, icon, y}
   chip      {text, x?, y}
 """
+import numpy as np
 import os as _os
 EDV = _os.environ.get('EDV_HOME', _os.path.expanduser('~/edicao-video-dados'))
-import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 FONTS = EDV + '/fonts/'
@@ -102,18 +102,40 @@ class UIRenderer:
                 text_at(d, tx, y0 + pad + cap_h(fT) + 28, el['subtitle'], fS, MUTED)
         elif t == 'checklist':
             items = el['items']; k = state
-            fI = font(BOLD, el.get('size', 48)); ch = cap_h(fI); row = int(ch * 2.4); pad = 36; r = ch * .95
-            tw = max(d.textlength(it['text'], font=fI) for it in items)
-            bw = int(min(W * .9, tw + pad * 2 + 2 * r + 28)); bh = pad * 2 + row * (len(items) - 1) + int(2 * r)
-            x0 = (W - bw) // 2; y0 = int(el.get('y', .62) * H)
-            d.rounded_rectangle([x0, y0, x0 + bw, y0 + bh], 34, fill=PANEL, outline=(255, 255, 255, 46), width=2)
-            for i, it in enumerate(items):
-                cy = y0 + pad + r + i * row; cx = x0 + pad + r; on = i < k
-                if on:
-                    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=ACCENT); icon(d, it.get('icon', 'check'), cx, cy, r, TEXT)
-                else:
-                    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=MUTED, width=3)
-                text_at(d, cx + r + 28, cy - ch / 2, it['text'], fI, TEXT if on else MUTED + (150,))
+            if el.get('layout') == 'row':
+                # one compact pill row: each item gets its own check circle, filled when spoken
+                size = el.get('size', 44); pad, sp, inner = 24, 24, 14
+                while True:
+                    fI = font(BOLD, size); ch = cap_h(fI); r = ch * .95
+                    tw = [d.textlength(it['text'], font=fI) for it in items]
+                    bw = int(pad * 2 + sum(2 * r + inner + w_ for w_ in tw) + sp * (len(items) - 1))
+                    if bw <= W * .92 or size <= 26:
+                        break
+                    size -= 2
+                bh = int(pad * 2 + 2 * r); x0 = (W - bw) // 2; y0 = int(el.get('y', .62) * H)
+                d.rounded_rectangle([x0, y0, x0 + bw, y0 + bh], bh // 2, fill=PANEL, outline=(255, 255, 255, 46), width=2)
+                x = x0 + pad; cy = y0 + bh / 2
+                for i, it in enumerate(items):
+                    cx = x + r; on = i < k
+                    if on:
+                        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=ACCENT); icon(d, it.get('icon', 'check'), cx, cy, r, TEXT)
+                    else:
+                        d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=MUTED, width=3)
+                    text_at(d, cx + r + inner, cy - ch / 2, it['text'], fI, TEXT if on else MUTED + (150,))
+                    x += 2 * r + inner + tw[i] + sp
+            else:
+                fI = font(BOLD, el.get('size', 48)); ch = cap_h(fI); row = int(ch * 2.4); pad = 36; r = ch * .95
+                tw = max(d.textlength(it['text'], font=fI) for it in items)
+                bw = int(min(W * .9, tw + pad * 2 + 2 * r + 28)); bh = pad * 2 + row * (len(items) - 1) + int(2 * r)
+                x0 = (W - bw) // 2; y0 = int(el.get('y', .62) * H)
+                d.rounded_rectangle([x0, y0, x0 + bw, y0 + bh], 34, fill=PANEL, outline=(255, 255, 255, 46), width=2)
+                for i, it in enumerate(items):
+                    cy = y0 + pad + r + i * row; cx = x0 + pad + r; on = i < k
+                    if on:
+                        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=ACCENT); icon(d, it.get('icon', 'check'), cx, cy, r, TEXT)
+                    else:
+                        d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=MUTED, width=3)
+                    text_at(d, cx + r + 28, cy - ch / 2, it['text'], fI, TEXT if on else MUTED + (150,))
         elif t == 'counter':
             fN = font(NUM, el.get('size', 250)); fL = font(BOLD, el.get('label_size', 44))
             s = f"{el.get('prefix', '')}{state}{el.get('suffix', '')}"
@@ -123,25 +145,45 @@ class UIRenderer:
                 lw = d.textlength(el['label'], font=fL)
                 text_at(d, (W - lw) / 2, y0 + cap_h(fN) + 34, el['label'], fL, ACCENT)
         elif t == 'versus':
-            fL = font(BOLD, el.get('size', 44)); fS = font(REG, el.get('sub_size', 30))
-            colw = int(W * .42); gap = int(W * .03); bh = int(el.get('h', 200)); y0 = int(el.get('y', .62) * H)
+            colw = int(W * .445); gap = int(W * .025); bh = int(el.get('h', 230)); y0 = int(el.get('y', .62) * H)
             xs = [(W - 2 * colw - gap) // 2, (W - 2 * colw - gap) // 2 + colw + gap]
+            ir, tx_off = 34, 104
+            room = colw - tx_off - 24
+            sz, ssz = el.get('size', 52), el.get('sub_size', 36)
+            while max(d.textlength(el[sd]['title'], font=font(BOLD, sz)) for sd in ('left', 'right')) > room and sz > 30:
+                sz -= 1
+            fL = font(BOLD, sz); fS = font(REG, ssz)
+            def wrap(txt):
+                ws_, lines = txt.split(), ['']
+                for w_ in ws_:
+                    cand = (lines[-1] + ' ' + w_).strip()
+                    if d.textlength(cand, font=fS) <= room or not lines[-1]:
+                        lines[-1] = cand
+                    else:
+                        lines.append(w_)
+                return lines
             for k, side in enumerate(('left', 'right')):
+                if el.get('reveal') and k == 1 and state < 2:
+                    continue
                 it = el[side]; lit = state == k + 1
-                d.rounded_rectangle([xs[k], y0, xs[k] + colw, y0 + bh], 30, fill=(ACCENT + (240,)) if lit else PANEL, outline=None if lit else (255, 255, 255, 46), width=2)
-                icon(d, it.get('icon', 'x' if k == 0 else 'check'), xs[k] + 56, y0 + bh / 2, 36, TEXT)
-                tx = xs[k] + 108
-                text_at(d, tx, y0 + bh / 2 - cap_h(fL) - (6 if it.get('sub') else -cap_h(fL) / 2), it['title'], fL, TEXT)
-                if it.get('sub'):
-                    text_at(d, tx, y0 + bh / 2 + 14, it['sub'], fS, TEXT if lit else MUTED)
+                d.rounded_rectangle([xs[k], y0, xs[k] + colw, y0 + bh], 32, fill=(ACCENT + (240,)) if lit else PANEL, outline=None if lit else (255, 255, 255, 46), width=2)
+                sub = wrap(it.get('sub', '')) if it.get('sub') else []
+                lh = cap_h(fS) + 14
+                block = cap_h(fL) + (18 + lh * len(sub) - 14 if sub else 0)
+                top = y0 + (bh - block) / 2
+                icon(d, it.get('icon', 'x' if k == 0 else 'check'), xs[k] + 22 + ir, top + cap_h(fL) / 2, ir, TEXT)
+                tx = xs[k] + tx_off
+                text_at(d, tx, top, it['title'], fL, TEXT)
+                for j, ln in enumerate(sub):
+                    text_at(d, tx, top + cap_h(fL) + 18 + j * lh, ln, fS, TEXT if lit else MUTED)
         elif t == 'cta':
             fT = font(BOLD, el.get('size', 46)); ch = cap_h(fT)
-            bh = ch + 64; tw = d.textlength(el['text'], font=fT); bw = int(tw + 70 + bh)
+            bh = ch + 70; tw = d.textlength(el['text'], font=fT); bw = int(tw + 70 + bh)
             x0 = (W - bw) // 2; y0 = int(el.get('y', .64) * H)
             d.rounded_rectangle([x0, y0, x0 + bw, y0 + bh], bh // 2, fill=(250, 250, 250, 245))
             d.ellipse([x0 + 10, y0 + 10, x0 + bh - 10, y0 + bh - 10], fill=ACCENT)
             icon(d, el.get('icon', 'send'), x0 + bh / 2, y0 + bh / 2, (bh - 20) / 2, TEXT)
-            text_at(d, x0 + bh + 22, y0 + 32, el['text'], fT, (18, 22, 26))
+            text_at(d, x0 + bh + 22, y0 + (bh - ch) / 2, el['text'], fT, (18, 22, 26))
         elif t == 'chip':
             fC = font(BOLD, el.get('size', 42)); ch = cap_h(fC)
             tw = d.textlength(el['text'], font=fC); bw = int(tw + 64); bh = ch + 46
@@ -149,8 +191,9 @@ class UIRenderer:
             d.rounded_rectangle([x0, y0, x0 + bw, y0 + bh], bh // 2, fill=ACCENT)
             text_at(d, x0 + 32, y0 + 23, el['text'], fC, TEXT)
         bbox = img.getbbox()
-        if bbox and bbox[3] > int(0.68 * H):            # never below 68% (Reels interface zone)
-            dy_ = bbox[3] - int(0.68 * H)
+        lim = int(el.get('max_bottom', 0.68) * H)
+        if bbox and bbox[3] > lim:                      # never below the Reels interface line
+            dy_ = bbox[3] - lim
             img = img.transform(img.size, Image.AFFINE, (1, 0, 0, 0, 1, dy_)); bbox = img.getbbox()
         out = (bbox, np.asarray(img.crop(bbox), dtype=np.float32) / 255.0) if bbox else None
         if out is not None:

@@ -4,7 +4,7 @@ usage: lut_teal.py out.cube [strength=1.0] [black=0.07] [white=0.90] [skin_warm=
 Also: lut_teal.py --preview frame.png out.png ... applies the LUT to a still for checking."""
 import sys, numpy as np
 
-def grade(rgb, strength=1.0, black=0.07, white=0.90, skin_warm=1.0, contrast=1.0):
+def grade(rgb, strength=1.0, black=0.07, white=0.90, skin_warm=1.0, contrast=1.0, skin_sat=1.0):
     """rgb float (...,3) 0..1 -> graded"""
     x = np.clip(rgb, 0, 1)
     r, g, b = x[..., 0], x[..., 1], x[..., 2]
@@ -36,7 +36,10 @@ def grade(rgb, strength=1.0, black=0.07, white=0.90, skin_warm=1.0, contrast=1.0
     out = teal * (1 - w_skin[..., None]) + warm * w_skin[..., None]
     # saturation: +10 %
     l = out.mean(-1, keepdims=True)
-    out = l + (out - l) * 1.10
+    # warm hues (skin, blond hair) get skin_sat instead of the +10 %
+    dhw = np.minimum(np.abs(h - 30), 360 - np.abs(h - 30))
+    w_warm = np.exp(-(dhw / 20) ** 2) * np.clip((sat - 0.10) / 0.15, 0, 1)
+    out = l + (out - l) * (1.10 * (1 - w_warm[..., None]) + skin_sat * w_warm[..., None])
     return np.clip(out, 0, 1)
 
 def write_cube(path, n=33, **kw):
@@ -53,9 +56,9 @@ if __name__ == '__main__':
     if sys.argv[1] == '--preview':
         from PIL import Image
         im = np.asarray(Image.open(sys.argv[2]).convert('RGB'), np.float32) / 255
-        kw = dict(zip(['strength', 'black', 'white', 'skin_warm', 'contrast'], map(float, sys.argv[4:])))
+        kw = dict(zip(['strength', 'black', 'white', 'skin_warm', 'contrast', 'skin_sat'], map(float, sys.argv[4:])))
         Image.fromarray((grade(im, **kw) * 255 + .5).astype(np.uint8)).save(sys.argv[3])
     else:
-        kw = dict(zip(['strength', 'black', 'white', 'skin_warm', 'contrast'], map(float, sys.argv[2:])))
+        kw = dict(zip(['strength', 'black', 'white', 'skin_warm', 'contrast', 'skin_sat'], map(float, sys.argv[2:])))
         write_cube(sys.argv[1], **kw)
         print('wrote', sys.argv[1], kw)

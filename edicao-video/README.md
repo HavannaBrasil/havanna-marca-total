@@ -16,8 +16,9 @@ export EDV_HOME=~/edicao-video-dados      # pasta de dados (modelos, fontes, tra
 ## Fluxo
 
 1. **Entrada do vídeo bruto.** `ferramentas/intake_carla.sh` baixa o vídeo da Carla do Drive, normaliza (HDR do iPhone para SDR, 30 quadros por segundo, 1080x1920) e transcreve com dois modelos (Parakeet com tempo por palavra e Whisper para conferir o texto).
-2. **Plano de edição.** Escreve-se um `plan.json` com índices de palavras: trechos mantidos, cartões laranja e brancos, gancho, momento em preto e branco, transições, elementos de UI e trilha. O formato está descrito no topo de `ferramentas/plan_tool2.py`.
-3. **Render.** `ferramentas/run_chain.sh <pasta do trabalho> [preset]` executa, em ordem: plano para linha do tempo, enquadramento pelo rosto, montagem com cor, vãos largos das legendas, transições com recorte de pessoa, mixagem e composição final.
+2. **Plano de edição.** Escreve-se um `plan.json` com índices de palavras: trechos mantidos, cartões laranja e brancos, gancho, momento em preto e branco, transições, elementos de UI e trilha. O formato está descrito no topo de `ferramentas/plan_tool2.py`. Com `snap_energy`, os cortes só acontecem onde o áudio está de fato em silêncio e cada pausa real é reduzida para cerca de 90 ms, como na referência; `hard` fixa cortes exatos em trechos com repetição ou palavra recomeçada, conferidos antes com `asr_clip.py`. A chave `style` desloca as legendas para baixo quando o rosto ocupa a parte alta do quadro (no vídeo da Carla, `dy` de 267 px) e ativa a sombra suave do laranja.
+3. **Conferência.** `ferramentas/preview.py` compõe legendas e UI sobre a base em instantes escolhidos e gera uma folha de quadros, para validar posição e leitura antes do render completo.
+4. **Render.** `ferramentas/run_chain.sh <pasta do trabalho> [preset]` executa, em ordem: plano para linha do tempo, enquadramento pelo rosto, montagem com cor, vãos largos das legendas, transições com recorte de pessoa, mixagem e composição final.
 
 ## Arquivos
 
@@ -25,6 +26,8 @@ export EDV_HOME=~/edicao-video-dados      # pasta de dados (modelos, fontes, tra
 | --- | --- |
 | `prep.py` | Normaliza a fonte (HDR, rotação, taxa de quadros, resolução) |
 | `asr_parakeet.py`, `asr_whisper.py` | Transcrição com tempo por palavra e conferência do texto |
+| `asr_clip.py` | Reconhece trechos curtos da fonte para decidir pontos de corte exatos |
+| `preview.py` | Folha de quadros com legendas e UI para conferência antes do render |
 | `plan_tool2.py` | Aplica as regras da referência ao plano e gera a linha do tempo |
 | `facecenter.py` | Centraliza cada enquadramento no rosto |
 | `assemble.py` | Corta, reenquadra e aplica a cor |

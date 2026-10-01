@@ -27,7 +27,14 @@ for i,s in enumerate(edl['segments']):
     v += f",fps=30,format=yuv420p[v{i}]"
     fc.append(v); vl.append(f"[v{i}]")
     fd=min(0.006,dur/4)
-    fc.append(f"[0:a]atrim=start={s['in']:.4f}:end={s['out']:.4f},asetpts=PTS-STARTPTS,afade=t=in:d={fd:.4f},afade=t=out:st={dur-fd:.4f}:d={fd:.4f}[a{i}]"); al.append(f"[a{i}]")
+    segs_=edl['segments']
+    # no fade where the audio simply continues (a picture-only cut inside continuous speech)
+    cont_in = i > 0 and abs(segs_[i-1]['out'] - s['in']) < 1e-3
+    cont_out = i + 1 < len(segs_) and abs(segs_[i+1]['in'] - s['out']) < 1e-3
+    af = f"[0:a]atrim=start={s['in']:.4f}:end={s['out']:.4f},asetpts=PTS-STARTPTS"
+    if not cont_in: af += f",afade=t=in:d={fd:.4f}"
+    if not cont_out: af += f",afade=t=out:st={dur-fd:.4f}:d={fd:.4f}"
+    fc.append(af + f"[a{i}]"); al.append(f"[a{i}]")
 n=len(edl['segments'])
 fc.append(''.join(vl)+f"concat=n={n}:v=1:a=0[vout]")
 fc.append(''.join(al)+f"concat=n={n}:v=0:a=1[aout]")

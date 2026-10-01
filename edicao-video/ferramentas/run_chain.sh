@@ -15,7 +15,7 @@ t=json.load(open('timeline.json')); p=json.load(open('plan.json'))
 music=dict(p.get('music',{})); music.setdefault('build_at', t['music_build']); music.setdefault('lufs',-29)
 json.dump({'voice':'base.wav','out':'mix.wav','music':music,'sfx':t['sfx'],'target_lufs':-14, **({'voice_chain':p['voice_chain']} if 'voice_chain' in p else {})},open('mix.json','w'))
 proj={'base':'base.mp4','audio':'mix.wav','out':p.get('out','final.mp4'),'preset':'$PRESET','crf':p.get('crf',16),
-      'captions':t['captions'],'ui':t['ui'],'bw':t['bw'],'transitions':json.load(open('trans/transitions.json')),'duration':t['duration']}
+      'captions':t['captions'],'ui':t['ui'],'bw':t['bw'],'transitions':json.load(open('trans/transitions.json')),'duration':t['duration'],'style':p.get('style')}
 json.dump(proj,open('proj.json','w'),ensure_ascii=False)
 PY
 python3 $S/mix.py mix.json

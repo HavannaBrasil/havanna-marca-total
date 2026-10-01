@@ -1,0 +1,701 @@
+{
+ "src": "mezz.mov",
+ "grade": "lut3d=file=carla.cube:interp=tetrahedral",
+ "out": "carla_editado.mp4",
+ "crf": 16,
+ "text": {
+  "45": "faz",
+  "46": "tudo",
+  "88": "Principalmente,",
+  "149": "está",
+  "155": "",
+  "158": "forte,",
+  "159": "vem",
+  "163": "comunidade.",
+  "168": "bio",
+  "175": ""
+ },
+ "keep": [
+  [
+   0,
+   101
+  ],
+  [
+   104,
+   141
+  ],
+  [
+   148,
+   193
+  ]
+ ],
+ "hard": {
+  "38": {
+   "out": 15.0
+  },
+  "118": {
+   "out": 62.35
+  },
+  "148": {
+   "in": 77.57
+  }
+ },
+ "snap_energy": true,
+ "pad_before": 0.05,
+ "pad_after": 0.06,
+ "max_gap": 0.12,
+ "breath": {
+  "159": 0.25
+ },
+ "framing": "auto",
+ "levels": {
+  "W": 1.08,
+  "M": 1.2,
+  "T": 1.32
+ },
+ "cards": [
+  {
+   "tier": "hook",
+   "top": [
+    0,
+    1
+   ],
+   "top_text": [
+    "VOCÊ",
+    "CONSTRUIU"
+   ],
+   "sub": [
+    2,
+    4
+   ],
+   "top_gap": 120
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     5,
+     6
+    ],
+    [
+     7,
+     8
+    ]
+   ],
+   "text": [
+    "NÃO PRECISA",
+    "DE NINGUÉM."
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    9,
+    12
+   ]
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     13,
+     13
+    ]
+   ],
+   "text": [
+    "EXAUSTA"
+   ],
+   "entry": "slide"
+  },
+  {
+   "tier": "orange",
+   "w": [
+    14,
+    15
+   ]
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     16,
+     16
+    ],
+    [
+     17,
+     17
+    ]
+   ],
+   "text": [
+    "NESSA",
+    "VIDA."
+   ],
+   "mode": "equal"
+  },
+  {
+   "tier": "orange",
+   "w": [
+    18,
+    22
+   ]
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     23,
+     24
+    ]
+   ],
+   "text": [
+    "MULHER FORTE"
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    25,
+    28
+   ]
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     29,
+     30
+    ],
+    [
+     31,
+     32
+    ]
+   ],
+   "text": [
+    "O MUNDO",
+    "NAS COSTAS"
+   ],
+   "line2_entry": "slide"
+  },
+  {
+   "tier": "orange",
+   "w": [
+    33,
+    36
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    37,
+    38
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    39,
+    41
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    42,
+    44
+   ]
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     45,
+     46
+    ],
+    [
+     47,
+     47
+    ]
+   ],
+   "text": [
+    "FAZ TUDO",
+    "SOZINHA."
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    48,
+    52
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    53,
+    55
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    56,
+    58
+   ]
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     59,
+     60
+    ],
+    [
+     61,
+     61
+    ]
+   ],
+   "text": [
+    "UMA MULHER",
+    "FORTE."
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    62,
+    64
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    65,
+    68
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    69,
+    72
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    73,
+    75
+   ]
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     76,
+     77
+    ],
+    [
+     78,
+     78
+    ]
+   ],
+   "text": [
+    "FAZER TUDO",
+    "SOZINHA."
+   ],
+   "line2_entry": "slide"
+  },
+  {
+   "tier": "orange",
+   "w": [
+    79,
+    81
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    82,
+    85
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    86,
+    87
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    88,
+    88
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    89,
+    91
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    92,
+    94
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    95,
+    99
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    100,
+    101
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    104,
+    106
+   ]
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     107,
+     107
+    ]
+   ],
+   "text": [
+    "INDEPENDÊNCIA"
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    108,
+    110
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    111,
+    113
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    114,
+    116
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    117,
+    117
+   ]
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     118,
+     118
+    ]
+   ],
+   "text": [
+    "MATURIDADE."
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    119,
+    121
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    122,
+    125
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    126,
+    128
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    129,
+    132
+   ]
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     133,
+     134
+    ],
+    [
+     135,
+     135
+    ]
+   ],
+   "text": [
+    "ESSA MULHER",
+    "EXAUSTA,"
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    136,
+    138
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    139,
+    141
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    148,
+    150
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    151,
+    154
+   ]
+  },
+  {
+   "tier": "white",
+   "lines": [
+    [
+     156,
+     157
+    ],
+    [
+     158,
+     158
+    ]
+   ],
+   "text": [
+    "QUE É",
+    "FORTE,"
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    159,
+    162
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    163,
+    163
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    164,
+    168
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    169,
+    172
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    173,
+    174
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    176,
+    178
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    179,
+    182
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    183,
+    186
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    187,
+    190
+   ]
+  },
+  {
+   "tier": "orange",
+   "w": [
+    191,
+    193
+   ]
+  }
+ ],
+ "bw": [
+  16,
+  17
+ ],
+ "transitions": [
+  {
+   "at": 18,
+   "pattern": "T1"
+  },
+  {
+   "at": 62,
+   "pattern": "T2"
+  },
+  {
+   "at": 104,
+   "pattern": "T3"
+  },
+  {
+   "at": 129,
+   "pattern": "T4"
+  }
+ ],
+ "ui": [
+  {
+   "type": "checklist",
+   "layout": "row",
+   "at": 85,
+   "until": 101,
+   "tail": 0.15,
+   "y": 0.705,
+   "max_bottom": 0.8,
+   "size": 50,
+   "items": [
+    {
+     "text": "Delegar",
+     "at": 87
+    },
+    {
+     "text": "Confiar",
+     "at": 91
+    },
+    {
+     "text": "Ser cuidada",
+     "at": 101
+    }
+   ]
+  },
+  {
+   "type": "versus",
+   "at": 108,
+   "until": 128,
+   "tail": 0.2,
+   "y": 0.7,
+   "max_bottom": 0.83,
+   "reveal": true,
+   "left_at": 108,
+   "right_at": 118,
+   "left": {
+    "title": "Independência",
+    "sub": "pode fazer tudo sozinha",
+    "icon": "shield"
+   },
+   "right": {
+    "title": "Maturidade",
+    "sub": "não precisa fazer sozinha",
+    "icon": "check"
+   }
+  },
+  {
+   "type": "cta",
+   "text": "Link na bio",
+   "icon": "arrow",
+   "at": 164,
+   "until": 174,
+   "tail": 0.2,
+   "y": 0.705,
+   "max_bottom": 0.8,
+   "size": 56
+  }
+ ],
+ "sfx": "auto",
+ "music": {
+  "key_shift": 0
+ },
+ "style": {
+  "dy": 267,
+  "WHITE": {
+   "max_cap": 210,
+   "block_w": 820,
+   "block_max": 900,
+   "equal_cap": 215,
+   "equal_cy": 1250
+  },
+  "HOOK": {
+   "max_w": 980
+  },
+  "ORANGE": {
+   "shadow_k": 0.55,
+   "shadow_sigma": 6,
+   "shadow_dy": 3
+  }
+ },
+ "min_pause": 0.2,
+ "silence_db": -45,
+ "cut_at": [
+  5,
+  9,
+  25,
+  29,
+  33,
+  59,
+  100,
+  111,
+  126,
+  176,
+  187
+ ]
+}

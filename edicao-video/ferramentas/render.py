@@ -13,9 +13,9 @@ caption card:
   {"tier":"hook","top":[{"text":"QUANDO","t":0},{"text":"É QUE","t":0}],"top_gap":170,"sub":[..words..],"t_sub":0.87,"t0":0,"t1":1.97}
 bw: [[t0,t1],..]    transitions: [{"E":cut_time,"frames":"preroll.mp4","alpha":"preroll_alpha.mkv","pattern":["white","semi",..]}]
 """
+import sys, json, subprocess, os
 import os as _os
 EDV = _os.environ.get('EDV_HOME', _os.path.expanduser('~/edicao-video-dados'))
-import sys, json, subprocess, os
 import numpy as np
 import cv2
 from PIL import Image, ImageDraw, ImageFont
@@ -169,8 +169,20 @@ def hook_layout(top_words, top_gap, sub_words):
     parts = [render_text_mask(t, fn, size, track, HOOK['xscale']) for t in top_words]
     widths = [r - l + 1 for (_, l, r, _) in parts]
     total = sum(widths) + top_gap * (len(parts) - 1)
+    max_w = HOOK.get('max_w', 1000)
+    if total > max_w:
+        top_gap = max(HOOK.get('min_gap', 60), top_gap - (total - max_w))
+        total = sum(widths) + top_gap * (len(parts) - 1)
+    if total > max_w:
+        size *= (max_w - top_gap * (len(parts) - 1)) / sum(widths); track = HOOK['track_em'] * size
+        parts = [render_text_mask(t, fn, size, track, HOOK['xscale']) for t in top_words]
+        widths = [r - l + 1 for (_, l, r, _) in parts]
+        total = sum(widths) + top_gap * (len(parts) - 1)
+        hook_layout.cap = size * WHITE['cap_ratio']
+    else:
+        hook_layout.cap = HOOK['cap']
     x = (W - total) / 2
-    baseline = HOOK['captop'] + HOOK['cap']
+    baseline = HOOK['captop'] + HOOK['cap']   # baseline stays put when the line has to shrink
     tops = []
     for (a, l, r, base), w_ in zip(parts, widths):
         tops.append(dict(a=a, x=x - l, y=baseline - base, x0=x, x1=x + w_))
@@ -235,7 +247,7 @@ class Captions:
                     seq = [(110, .3), (72, .5), (42, .7), (20, .87), (6, .96)]
                     if f < len(seq):
                         dy, op = seq[f]
-                    out.append((full, col, op, 0, dy, False, br))
+                    out.append((full, col, op, 0, dy, 'shadow', br))
                 elif e == 'A':  # word-by-word stagger left to right, dim hold at 81%, then hard step to 100%
                     br = 0.81 if f < 8 else 1.0
                     seqw = [(33, .3), (15, .6), (4, .8)]
@@ -244,9 +256,9 @@ class Captions:
                         if fw < 0:
                             continue
                         dyw, opw = seqw[fw] if fw < len(seqw) else (0, 1.0)
-                        out.append((wm, col, opw, 0, dyw, False, br))
+                        out.append((wm, col, opw, 0, dyw, 'shadow', br))
                 else:
-                    out.append((full, col, op, 0, dy, False, br))
+                    out.append((full, col, op, 0, dy, 'shadow', br))
             elif c['tier'] == 'white':
                 lines = self.white_lines(c)
                 for li, L in enumerate(lines):
@@ -272,7 +284,7 @@ class Captions:
                     seq = [(30, 0.0), (15, .3), (4.5, .6)]
                     dy, op = seq[f2] if f2 < len(seq) else (0, 1.0)
                     br = 0.81 if f2 < 8 else 1.0
-                    out.append((sub, ORANGE['hook_color'], op, 0, dy, False, br))
+                    out.append((sub, ORANGE['hook_color'], op, 0, dy, 'shadow', br))
         return out
 
     def _line_canvas(self, L):
@@ -362,8 +374,20 @@ def blend_sprite(dst, spr, op=1.0, dy=0):
     region *= (1 - al); region += rgb * op  # sprite rgb is premultiplied
 
 # ---------------------------------------------------------------- main loop
+def apply_style(st):
+    """Per-video layout overrides, e.g. {"dy": 267, "WHITE": {"max_cap": 210}}. dy moves every caption tier down."""
+    if not st:
+        return
+    dy = st.get('dy', 0)
+    ORANGE['baseline'] += dy
+    WHITE['single_captop'] += dy; WHITE['block_cy'] += dy; WHITE['equal_cy'] += dy
+    HOOK['captop'] += dy; HOOK['sub_baseline'] += dy
+    for name, d in (('ORANGE', ORANGE), ('WHITE', WHITE), ('HOOK', HOOK)):
+        d.update(st.get(name, {}))
+
 def main():
     P = json.load(open(sys.argv[1]))
+    apply_style(P.get('style'))
     caps = Captions(P['captions'])
     ui = P.get('ui', [])
     UR = UIRenderer(W, H) if (UIRenderer and ui) else None
@@ -408,16 +432,21 @@ def main():
                 occ = occ * 0  # no occlusion during the flash
         # captions
         prem = np.zeros_like(fr); text_a = np.zeros((H, W), np.float32); glow_a = np.zeros((H, W), np.float32)
+        shad_a = np.zeros((H, W), np.float32)
         if t < end_t - 3 / FPS:
             for m, col, op, dx, dy, glow, br in caps.layers(t):
                 mm = shift(m, dx, dy) * op
                 c = np.array(col, np.float32) / 255 * br
                 prem = prem * (1 - mm[..., None]) + c * mm[..., None]      # premultiplied "over"
                 text_a = text_a * (1 - mm) + mm
-                if glow:
+                if glow is True:
                     glow_a = np.maximum(glow_a, np.clip(cv2.GaussianBlur(mm, (0, 0), WHITE['glow_sigma']) * WHITE['glow_k'], 0, 1))
+                elif glow == 'shadow' and ORANGE.get('shadow_k', 0) > 0:
+                    sh = cv2.GaussianBlur(shift(mm, 0, ORANGE.get('shadow_dy', 3)), (0, 0), ORANGE.get('shadow_sigma', 6))
+                    shad_a = np.maximum(shad_a, np.clip(sh * ORANGE['shadow_k'], 0, 1))
         if text_a.any():
             vis = (1 - occ)[..., None]
+            fr = fr * (1 - shad_a[..., None] * vis)
             g = glow_a[..., None] * vis
             fr = fr * (1 - g) + 1.0 * g
             fr = fr * (1 - text_a[..., None] * vis) + prem * vis
