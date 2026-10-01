@@ -89,6 +89,7 @@ else:
     # energy mode: a cut only where the audio really is silent. Every real pause (>= min_pause) is closed down to
     # 2 x keep_pause (the reference's median pause is 90 ms); forced cuts without a pause cut in the middle of the gap.
     MINP, KP = plan.get('min_pause', 0.16), plan.get('keep_pause', 0.045)
+    KPO = plan.get('keep_pause_out', KP)          # a little more air after a word than before the next one
     def silence_between(i):
         p_, q_ = words[i - 1], words[i]
         lo = p_['s'] + 0.5 * (p_['e'] - p_['s']); hi = min(q_['s'] + 0.15, max(q_['s'], q_['e'] - 0.05))
@@ -105,7 +106,7 @@ else:
         w_ = words[b]; i = int((w_['s'] + 0.3 * (w_['e'] - w_['s'])) * 100); j = int((w_['e'] + 0.4) * 100)
         while i < j:
             if ENV[i:i + 15].max() < SIL:
-                return i / 100 + KP
+                return i / 100 + KPO
             i += 1
         return w_['e'] + pa
     def start_of_range(a):
@@ -117,7 +118,7 @@ else:
             L, s0, s1 = silence_between(i)
             ho, hi_ = hard.get(i - 1, {}).get('out'), hard.get(i, {}).get('in')
             if L >= MINP or i in breath or ho is not None or hi_ is not None:
-                out_t = s0 + KP if L >= MINP else (s0 + s1) / 2 if L > 0.02 else (words[i - 1]['e'] + words[i]['s']) / 2
+                out_t = s0 + KPO if L >= MINP else (s0 + s1) / 2 if L > 0.02 else (words[i - 1]['e'] + words[i]['s']) / 2
                 in_t = s1 - breath.get(i, KP) if L >= MINP else out_t
                 if L >= MINP and i in breath:
                     in_t = max(out_t, s1 - breath[i])
