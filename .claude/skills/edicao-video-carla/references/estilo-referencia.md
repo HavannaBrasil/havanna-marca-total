@@ -1,6 +1,6 @@
 # Estilo do vídeo de referência (medido)
 
-Medidas tiradas quadro a quadro do vídeo de referência, em 1080x1920 e 30 quadros por segundo. As constantes já estão codificadas em `edicao-video/ferramentas/render.py`, `synth.py` e `mix.py`; este arquivo existe para você entender o que cada número significa antes de mudar algum. O estudo completo está no documento "Estudo do vídeo de referência para a edição da Carla" (https://claude.ai/artifact/KCfZzqJuRp3d4kGobsxpuG).
+Medidas tiradas quadro a quadro do vídeo de referência, em 1080x1920 e 30 quadros por segundo. As constantes estão em `edicao-video/ferramentas/`: legendas e efeitos de imagem em `render.py`, entradas, efeitos sonoros automáticos e enquadramento em `plan_tool2.py`, padrões das transições em `transitions.py`, UI em `ui_elements.py`, cor em `lut_teal.py`, trilha e efeitos em `synth.py`, mixagem em `mix.py`. Os ajustes próprios da Carla ficam no plano (`style`, `levels`, `grade`, `top_gap` do gancho). Este arquivo existe para você entender o que cada número significa antes de mudar algum. O estudo completo está no documento "Estudo do vídeo de referência para a edição da Carla" (https://claude.ai/artifact/KCfZzqJuRp3d4kGobsxpuG).
 
 ## Sumário
 
@@ -46,7 +46,7 @@ Primeiros segundos: palavras brancas grandes no topo da área de legenda (as dua
 
 ## 5. Cortes e enquadramento
 
-- Pausas reduzidas a cerca de 90 ms (mediana da referência), ritmo de uns 200 palavras por minuto.
+- Pausas reduzidas a cerca de 90 ms (mediana da referência), ritmo de umas 200 palavras por minuto. Na Carla as pausas ficam em cerca de 115 ms (45 ms antes da palavra seguinte e 70 ms depois da anterior), porque com menos folga finais de palavra ficavam raspados; o ritmo dela, naturalmente mais calmo, fica em torno de 150 palavras por minuto.
 - Três tamanhos de plano trocados nos cortes. Na referência: 1,00, 1,17 e 1,30; na Carla, 1,08, 1,20 e 1,32, porque o enquadramento original dela já é fechado.
 - Em cerca de dois terços dos cortes o tamanho muda; nos demais o plano desliza para o lado.
 - Trechos curtos demais para parecer plano novo (menos de 0,5 s, ou menos de 0,9 s desde a última troca) mantêm o enquadramento: viram corte seco simples.
@@ -66,7 +66,7 @@ Quatro transições por vídeo, uma de cada padrão, espalhadas (na Carla: cerca
 
 ## 7. Momento em preto e branco
 
-Cerca de 22 quadros, cedo no vídeo, numa frase de peso: dessatura e escurece com curva (sem desfoque), com efeito sonoro de impacto grave. Começa sempre num corte e nunca invade o plano seguinte.
+Cerca de 22 quadros na referência (na Carla, cerca de 30, nas duas palavras de "nessa vida"), cedo no vídeo, numa frase de peso: dessatura e escurece com curva (sem desfoque), com efeito sonoro de impacto grave. Começa sempre num corte e nunca invade o plano seguinte.
 
 ## 8. Cor
 
@@ -86,6 +86,6 @@ A Carla grava em selfie fechada (rosto entre 24% e 54% da altura), com as mãos 
 - `style.dy` 267: todas as legendas descem 267 px, para o peito, deixando o rosto livre.
 - Cartões de duas linhas menores (`max_cap` 210, `block_w` 820, `block_max` 900; "equal" com 215 e centro em 1250).
 - Sombra suave atrás do laranja (`shadow_k` 0,55, desfoque 6 px, 3 px para baixo): sem ela o laranja some quando passa sobre as mãos. A referência não tem essa sombra.
-- Faixa de UI entre 70% e 83% da altura, logo abaixo da linha laranja.
+- Faixa de UI entre 70% e 83% da altura, logo abaixo da linha laranja. É mais baixa que o padrão do código (68%), por escolha consciente: com as legendas no peito, não sobra espaço acima, e essa faixa ainda fica acima da área de texto do Reels.
 
 Se ela gravar em outro lugar, com outra luz ou mais longe da câmera, esses valores precisam ser recalibrados com `preview.py` antes do render.

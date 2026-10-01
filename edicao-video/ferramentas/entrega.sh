@@ -6,7 +6,7 @@
 #   mestre/<nome>.mp4.parteN   o arquivo em qualidade máxima dividido em partes de 28 MiB, para enviar pelo chat
 #   qa_transicoes.png    quadros exatos em volta de cada transição (n-3, n-1, n)
 # e imprime duração, loudness e pico. Para juntar as partes no Mac:
-#   cd ~/Downloads && cat <nome>.mp4.parte? > ~/Desktop/<nome>.mp4
+#   cd ~/Downloads && cat <nome>.mp4.parte?? > ~/Desktop/<nome>.mp4
 set -e
 cd "$1"
 OUT=$(python3 -c "import json;print(json.load(open('proj.json'))['out'])"); NOME=${OUT%.mp4}
@@ -17,7 +17,7 @@ P="-c:v libx265 -preset medium -b:v ${VB}k -pix_fmt yuv420p -tag:v hvc1 -color_p
 ffmpeg -v error -y -i "$OUT" $P -x265-params pass=1:stats=x265.log:log-level=error -an -f mp4 /dev/null
 ffmpeg -v error -y -i "$OUT" $P -x265-params pass=2:stats=x265.log:log-level=error -c:a aac -b:a 192k -movflags +faststart "${NOME}_entrega.mp4"
 rm -rf mestre; mkdir mestre
-split -b 28M -d -a 1 "$OUT" "mestre/$(basename "$OUT").parte"
+split -b 28M -d -a 2 "$OUT" "mestre/$(basename "$OUT").parte"
 python3 - <<'PY'
 import json, subprocess
 E = [x['E'] for x in json.load(open('trans/transitions.json'))] if __import__('os').path.exists('trans/transitions.json') else []

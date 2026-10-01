@@ -23,6 +23,19 @@ plan.json:
  "sfx": "auto",
  "music": {"key_shift": 0}
 }
+The most complete real example is edicao-video/planos/carla_plan.json. Other keys:
+ out, crf                      final file name (entrega.sh derives <name>_entrega.mp4 from it) and x264 quality
+ style                         caption layout overrides for render.py: {"dy": px, "ORANGE": {...}, "WHITE": {...}, "HOOK": {...}}
+                               note: WHITE.equal_cy / block_cy given here are absolute and are NOT shifted by dy
+ min_pause, silence_db         energy mode: a pause shorter than min_pause (s) is kept; silence = envelope below silence_db
+ keep_pause, keep_pause_out    air left before the next word / after the previous word at each closed pause (s)
+ framing: "auto", levels       three static zoom levels switched at cuts; min_shot, min_seg keep tiny pieces as plain jump cuts
+ early_s                       orange cards before this time use entry A (default 8 s)
+ sfx_until, sfx_min_gap        automatic SFX: share of the video that gets booms/hits and minimum spacing between them
+ voice_chain                   optional ffmpeg chain replacing mix.py's female voice chain
+ ui items: at, until (word indices), lead, tail (s), y, max_bottom (fractions of the height), size,
+           checklist: layout "row", items[{text, at}]; versus: left/right {title, sub, icon}, left_at, right_at, reveal;
+           cta: text, icon. The element ends tail s after `until`, or right before a transition that follows it.
 """
 import sys, json, os
 words = json.load(open(sys.argv[1])); plan = json.load(open(sys.argv[2])); out = sys.argv[3]

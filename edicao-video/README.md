@@ -10,15 +10,15 @@ Esta pasta contém apenas scripts. Nenhum vídeo, modelo ou fonte é versionado 
 
 ```bash
 export EDV_HOME=~/edicao-video-dados      # pasta de dados (modelos, fontes, trabalhos)
-./ferramentas/setup.sh                     # instala dependências e baixa modelos e fontes
+./ferramentas/setup.sh                     # instala dependências, baixa modelos e fontes e grava $EDV_HOME/env.sh
 ```
 
 ## Fluxo
 
 1. **Entrada do vídeo bruto.** `ferramentas/intake.sh <id ou link do arquivo> <nome>` baixa o vídeo do Drive, normaliza (HDR do iPhone para SDR, 30 quadros por segundo, 1080x1920) e transcreve com dois modelos (Parakeet com tempo por palavra e Whisper para conferir o texto).
 2. **Plano de edição.** Escreve-se um `plan.json` com índices de palavras: trechos mantidos, cartões laranja e brancos, gancho, momento em preto e branco, transições, elementos de UI e trilha. O formato está descrito no topo de `ferramentas/plan_tool2.py`. Com `snap_energy`, os cortes só acontecem onde o áudio está de fato em silêncio e cada pausa real é reduzida para cerca de 90 ms, como na referência; `hard` fixa cortes exatos em trechos com palavra recomeçada, e só depois de `asr_clip.py` confirmar que o trecho que termina no corte é reconhecido com a última palavra inteira. A chave `style` desloca as legendas para baixo quando o rosto ocupa a parte alta do quadro (no vídeo da Carla, `dy` de 267 px) e ativa a sombra suave do laranja.
-3. **Conferência.** `ferramentas/preview.py` compõe legendas e UI sobre a base em instantes escolhidos e gera uma folha de quadros, para validar posição e leitura antes do render completo.
-4. **Render.** `ferramentas/run_chain.sh <pasta do trabalho> [preset]` executa, em ordem: plano para linha do tempo, enquadramento pelo rosto, montagem com cor, vãos largos das legendas, transições com recorte de pessoa, mixagem e composição final.
+3. **Conferência.** `ferramentas/run_chain.sh <pasta> slow previa` monta a base e para, gravando `previa.png` (feita por `preview.py ... auto`) com legendas e UI nos instantes que importam, para validar posição e leitura antes do render completo. `ferramentas/inspecionar.py` lista palavras com índice, lista os cortes com os trechos prontos para o `asr_clip.py` e mostra o envelope de energia em volta de um instante.
+4. **Render.** `ferramentas/run_chain.sh <pasta do trabalho> [preset]` executa, em ordem: plano para linha do tempo, enquadramento pelo rosto, montagem com cor, transições com recorte de pessoa, vãos largos das legendas, mixagem e composição final. Se cortes, transições e LUT não mudaram desde a última montagem, reaproveita a base e as transições.
 5. **Controle de qualidade e entrega.** `ferramentas/qa_cortes.py <pasta>` reconhece o áudio final em volta de cada corte para achar palavra cortada; `ferramentas/entrega.sh <pasta>` gera a versão abaixo de 30 MB para o chat, divide o arquivo mestre em partes e monta a folha de quadros das transições.
 
 ## Arquivos
@@ -38,6 +38,7 @@ export EDV_HOME=~/edicao-video-dados      # pasta de dados (modelos, fontes, tra
 | `matte.py`, `transitions.py` | Recorte de pessoa e preparação das transições de silhueta |
 | `render.py`, `ui_elements.py` | Composição das legendas, efeitos e elementos de UI |
 | `synth.py`, `mix.py` | Trilha e efeitos originais, tratamento da voz e loudness |
-| `run_chain.sh` | Executa o fluxo inteiro |
+| `run_chain.sh`, `proj.py` | Executa o fluxo inteiro (ou só até a prévia) e grava os arquivos de mixagem e composição |
+| `inspecionar.py` | Palavras com índice, lista de cortes para conferência e envelope de energia |
 | `qa_cortes.py` | Confere no vídeo final se alguma palavra ficou cortada |
 | `entrega.sh` | Versão de entrega abaixo de 30 MB, mestre em partes e quadros das transições |

@@ -1,6 +1,7 @@
 """Contextual UI elements drawn in front of the video, in the reference's visual language
 (orange #FC7D01, Instrument Sans Bold for labels, Bebas Neue for numbers, dark translucent panels).
-Kept above max_bottom (default 68% of the height, per element) so nothing collides with the Reels interface.
+Kept above max_bottom (default 68% of the height, per element). For Carla's tight selfie the captions sit on the chest,
+so her UI deliberately uses a lower band (y 0.70, max_bottom 0.80-0.83), still above the Reels caption area.
 
 element types (times in seconds on the output timeline):
   card      {title, subtitle?, icon, y}
@@ -104,7 +105,7 @@ class UIRenderer:
             items = el['items']; k = state
             if el.get('layout') == 'row':
                 # one compact pill row: each item gets its own check circle, filled when spoken
-                size = el.get('size', 44); pad, sp, inner = 24, 24, 14
+                size = el.get('size', 50); pad, sp, inner = 24, 24, 14
                 while True:
                     fI = font(BOLD, size); ch = cap_h(fI); r = ch * .95
                     tw = [d.textlength(it['text'], font=fI) for it in items]
@@ -177,7 +178,7 @@ class UIRenderer:
                 for j, ln in enumerate(sub):
                     text_at(d, tx, top + cap_h(fL) + 18 + j * lh, ln, fS, TEXT if lit else MUTED)
         elif t == 'cta':
-            fT = font(BOLD, el.get('size', 46)); ch = cap_h(fT)
+            fT = font(BOLD, el.get('size', 56)); ch = cap_h(fT)
             bh = ch + 70; tw = d.textlength(el['text'], font=fT); bw = int(tw + 70 + bh)
             x0 = (W - bw) // 2; y0 = int(el.get('y', .64) * H)
             d.rounded_rectangle([x0, y0, x0 + bw, y0 + bh], bh // 2, fill=(250, 250, 250, 245))
