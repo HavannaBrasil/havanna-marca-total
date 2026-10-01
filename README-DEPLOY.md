@@ -45,6 +45,10 @@ Para atualizar o conteúdo do dashboard:
 
 Para trocar a senha, faça os mesmos passos usando a senha nova no passo 3.
 
+## Sites na Cloudflare
+
+Os sites da conta na Cloudflare Pages (enviados à mão) usam `seguranca/login_cloudflare.js` como `_worker.js`: login no servidor com `USERNAME`, `PASSWORD` e `SESSION_SECRET` cadastrados nas variáveis do projeto, sem senha padrão. Sem sessão válida, a página com os dados nunca chega ao navegador. `TITULO` e `LIBERAR` são opcionais (`LIBERAR` desliga uma tela de senha antiga que exista dentro do HTML).
+
 ## Como atualizar os dados
 
 O dashboard nasce com os últimos 12 meses já embutidos. Para atualizar sem reabrir o código:
